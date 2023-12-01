@@ -1,0 +1,165 @@
+Directory Structure:
+
+plaintext
+
+root
+│
+├── environments
+│   ├── dev
+│   │   ├── main.tf
+│   │   ├── variables.tfvars
+│   │   └── outputs.tf
+│   │
+│   ├── stage
+│   │   ├── main.tf
+│   │   ├── variables.tfvars
+│   │   └── outputs.tf
+│   │
+│   └── prod
+│       ├── main.tf
+│       ├── variables.tfvars
+│       └── outputs.tf
+│
+├── modules
+│   ├── api_gateway
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   │
+│   ├── lambda_function
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   │
+│   └── cognito_authorizer
+│       ├── main.tf
+│       ├── variables.tf
+│       └── outputs.tf
+│
+└── lambda_function.py
+
+Environment Configurations:
+
+Development Environment (environments/dev/variables.tfvars):
+
+hcl
+
+api_name             = "dev-api"
+vpc_endpoint_id      = "vpce-dev-id"
+lambda_function_name = "dev-lambda-function"
+# ... other development-specific variables
+
+Staging Environment (environments/stage/variables.tfvars):
+
+hcl
+
+api_name             = "stage-api"
+vpc_endpoint_id      = "vpce-stage-id"
+lambda_function_name = "stage-lambda-function"
+# ... other staging-specific variables
+
+Production Environment (environments/prod/variables.tfvars):
+
+hcl
+
+api_name             = "prod-api"
+vpc_endpoint_id      = "vpce-prod-id"
+lambda_function_name = "prod-lambda-function"
+# ... other production-specific variables
+
+Main Configuration in Each Environment:
+
+Development Environment (environments/dev/main.tf):
+
+hcl
+
+module "api_gateway" {
+  source         = "../../modules/api_gateway"
+  api_name       = var.api_name
+  vpc_endpoint_id = var.vpc_endpoint_id
+}
+
+module "lambda_function" {
+  source                   = "../../modules/lambda_function"
+  lambda_function_name     = var.lambda_function_name
+  # ... other variables
+}
+
+module "cognito_authorizer" {
+  source          = "../../modules/cognito_authorizer"
+  cognito_audience = var.cognito_audience
+  cognito_issuer   = var.cognito_issuer
+  api_gateway_id   = module.api_gateway.private_api.id
+}
+
+# ... other resources
+
+Staging Environment (environments/stage/main.tf):
+
+hcl
+
+module "api_gateway" {
+  source         = "../../modules/api_gateway"
+  api_name       = var.api_name
+  vpc_endpoint_id = var.vpc_endpoint_id
+}
+
+module "lambda_function" {
+  source                   = "../../modules/lambda_function"
+  lambda_function_name     = var.lambda_function_name
+  # ... other variables
+}
+
+module "cognito_authorizer" {
+  source          = "../../modules/cognito_authorizer"
+  cognito_audience = var.cognito_audience
+  cognito_issuer   = var.cognito_issuer
+  api_gateway_id   = module.api_gateway.private_api.id
+}
+
+# ... other resources
+
+Production Environment (environments/prod/main.tf):
+
+hcl
+
+module "api_gateway" {
+  source         = "../../modules/api_gateway"
+  api_name       = var.api_name
+  vpc_endpoint_id = var.vpc_endpoint_id
+}
+
+module "lambda_function" {
+  source                   = "../../modules/lambda_function"
+  lambda_function_name     = var.lambda_function_name
+  # ... other variables
+}
+
+module "cognito_authorizer" {
+  source          = "../../modules/cognito_authorizer"
+  cognito_audience = var.cognito_audience
+  cognito_issuer   = var.cognito_issuer
+  api_gateway_id   = module.api_gateway.private_api.id
+}
+
+# ... other resources
+
+Running Terraform Commands for Each Environment:
+
+To deploy your infrastructure for a specific environment, you would run Terraform commands with the corresponding variables file:
+
+bash
+
+# Development environment
+terraform init -var-file=./environments/dev/variables.tfvars
+terraform apply -var-file=./environments/dev/variables.tfvars
+
+# Staging environment
+terraform init -var-file=./environments/stage/variables.tfvars
+terraform apply -var-file=./environments/stage/variables.tfvars
+
+# Production environment
+terraform init -var-file=./environments/prod/variables.tfvars
+terraform apply -var-file=./environments/prod/variables.tfvars
+
+This approach allows you to manage different configurations for each environment while reusing the same module code. Adjust the variables and configurations based on your specific requirements for each environment.
