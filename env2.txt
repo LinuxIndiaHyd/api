@@ -1,0 +1,345 @@
+Directory Structure:
+
+plaintext
+
+root
+│
+├── environments
+│   ├── dev
+│   │   ├── main.tf
+│   │   ├── variables.tfvars
+│   │   └── outputs.tf
+│   │
+│   ├── stage
+│   │   ├── main.tf
+│   │   ├── variables.tfvars
+│   │   └── outputs.tf
+│   │
+│   └── prod
+│       ├── main.tf
+│       ├── variables.tfvars
+│       └── outputs.tf
+│
+├── modules
+│   ├── api_gateway
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   │
+│   ├── lambda_function
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   │
+│   └── cognito_authorizer
+│       ├── main.tf
+│       ├── variables.tf
+│       └── outputs.tf
+│
+├── main.tf
+├── variables.tf
+└── outputs.tf
+
+Module Definitions:
+
+API Gateway Module (modules/api_gateway/main.tf):
+
+hcl
+
+# modules/api_gateway/main.tf
+
+resource "aws_api_gateway_rest_api" "private_api" {
+  name        = var.api_name
+  description = "Private REST API"
+  endpoint_configuration {
+    types             = ["PRIVATE"]
+    vpc_endpoint_ids = [var.vpc_endpoint_id]
+  }
+}
+
+hcl
+
+# modules/api_gateway/variables.tf
+
+variable "api_name" {
+  description = "Name of the API Gateway"
+}
+
+variable "vpc_endpoint_id" {
+  description = "ID of the VPC endpoint"
+}
+
+hcl
+
+# modules/api_gateway/outputs.tf
+
+output "api_invoke_url" {
+  value = aws_api_gateway_integration_response.json_response.invoke_url
+}
+
+Lambda Function Module (modules/lambda_function/main.tf):
+
+hcl
+
+# modules/lambda_function/main.tf
+
+resource "aws_lambda_function" "my_lambda_function" {
+  handler          = "lambda_function.lambda_handler"
+  role             = var.lambda_function_role
+  function_name    = var.lambda_function_name
+  s3_bucket        = var.lambda_function_s3_bucket
+  s3_key           = var.lambda_function_s3_key
+  runtime          = "python3.7"
+  architectures    = ["x86_64"]
+  vpc_config {
+    security_group_ids = [var.security_group_id]
+    subnet_ids         = [var.subnet_id]
+  }
+}
+
+hcl
+
+# modules/lambda_function/variables.tf
+
+variable "lambda_function_name" {
+  description = "Name of the Lambda function"
+}
+
+variable "lambda_function_role" {
+  description = "ARN of the Lambda function role"
+}
+
+variable "lambda_function_s3_bucket" {
+  description = "S3 bucket containing Lambda function code"
+}
+
+variable "lambda_function_s3_key" {
+  description = "S3 key for Lambda function code"
+}
+
+variable "security_group_id" {
+  description = "ID of the security group"
+}
+
+variable "subnet_id" {
+  description = "ID of the subnet"
+}
+
+hcl
+
+# modules/lambda_function/outputs.tf
+
+output "lambda_function_arn" {
+  value = aws_lambda_function.my_lambda_function.arn
+}
+
+Cognito Authorizer Module (modules/cognito_authorizer/main.tf):
+
+hcl
+
+# modules/cognito_authorizer/main.tf
+
+resource "aws_apigatewayv2_authorizer" "cognito_authorizer" {
+  api_id             = var.api_gateway_id
+  authorizer_type    = "JWT"
+  identity_sources   = ["$request.header.Authorization"]
+  name               = "cognito-authorizer"
+
+  jwt_configuration {
+    audience             = var.cognito_audience
+    issuer               = var.cognito_issuer
+  }
+}
+
+hcl
+
+# modules/cognito_authorizer/variables.tf
+
+variable "cognito_audience" {
+  description = "Cognito audience"
+}
+
+variable "cognito_issuer" {
+  description = "Cognito issuer"
+}
+
+variable "api_gateway_id" {
+  description = "ID of the API Gateway"
+}
+
+hcl
+
+# modules/cognito_authorizer/outputs.tf
+
+output "cognito_authorizer_id" {
+  value = aws_apigatewayv2_authorizer.cognito_authorizer.id
+}
+
+Main Configuration (main.tf):
+
+hcl
+
+# main.tf
+
+module "api_gateway" {
+  source         = "./modules/api_gateway"
+  api_name       = var.api_name
+  vpc_endpoint_id = var.vpc_endpoint_id
+}
+
+module "lambda_function" {
+  source                   = "./modules/lambda_function"
+  lambda_function_name     = var.lambda_function_name
+  lambda_function_role     = var.lambda_function_role
+  lambda_function_s3_bucket = var.lambda_function_s3_bucket
+  lambda_function_s3_key    = var.lambda_function_s3_key
+  security_group_id        = var.security_group_id
+  subnet_id                 = var.subnet_id
+}
+
+module "cognito_authorizer" {
+  source          = "./modules/cognito_authorizer"
+  cognito_audience = var.cognito_audience
+  cognito_issuer   = var.cognito_issuer
+  api_gateway_id   = module.api_gateway.private_api.id
+}
+
+# ... other resources
+
+hcl
+
+# variables.tf
+
+variable "api_name" {
+  description = "Name of the API Gateway"
+}
+
+variable "vpc_endpoint_id" {
+  description = "ID of the VPC endpoint"
+}
+
+variable "lambda_function_name" {
+  description = "Name of the Lambda function"
+}
+
+variable "lambda_function_role" {
+  description = "ARN of the Lambda function role"
+}
+
+variable "lambda_function_s3_bucket" {
+  description = "
+
+User
+how to run this script from jenkins
+ChatGPT
+
+Running Terraform scripts from Jenkins involves setting up a Jenkins job that executes the necessary Terraform commands. Here's a step-by-step guide:
+Prerequisites:
+
+    Jenkins Installed: Ensure Jenkins is installed on your server or machine.
+    Terraform Installed: Make sure Terraform is installed on the machine where Jenkins is running.
+
+Steps:
+
+    Create a New Jenkins Job:
+        Open Jenkins and click on "New Item" to create a new job.
+        Enter a name for the job (e.g., "Terraform_Deployment") and choose "Freestyle project."
+
+    Configure the Job:
+
+        In the job configuration, go to the "General" section:
+            Select "GitHub project" if your Terraform configuration is stored in a GitHub repository. Enter the GitHub project URL.
+            Check "GitHub hook trigger for GITScm polling" to trigger the build when changes are pushed to the repository.
+
+        In the "Build" section:
+            Add a build step to execute shell commands.
+
+    Write Terraform Commands:
+
+    In the build step, write the Terraform commands you want to execute. For example:
+
+    bash
+
+    # Change to the directory containing your Terraform configuration
+    cd /path/to/terraform/config
+
+    # Initialize Terraform
+    terraform init
+
+    # Plan the changes
+    terraform plan -var-file=/path/to/variables.tfvars
+
+    # Apply the changes
+    terraform apply -var-file=/path/to/variables.tfvars -auto-approve
+
+    Make sure to replace /path/to/terraform/config with the actual path to your Terraform configuration and adjust the paths for variable files accordingly.
+
+    Configure GitHub Credentials (Optional):
+
+    If your Terraform configuration is in a private GitHub repository, you might need to configure Jenkins with GitHub credentials to access the repository.
+        In the job configuration, go to the "Source Code Management" section.
+        Choose "Git" and enter the repository URL.
+        Add the GitHub credentials (username/password or SSH key).
+
+    Save the Job Configuration:
+
+    Click "Save" to save the Jenkins job configuration.
+
+    Run the Jenkins Job:
+        Manually trigger the job by clicking "Build Now" in the Jenkins job dashboard.
+        Alternatively, push a change to your GitHub repository, and Jenkins should automatically trigger a build.
+
+Additional Considerations:
+
+    Workspace Cleanup:
+
+        You might want to add a build step to clean up the workspace before each build to ensure a clean environment:
+
+        bash
+
+        rm -rf /path/to/terraform/config/*
+
+    Environment Variables:
+        If your Terraform scripts use environment variables, you can set them in the Jenkins job configuration.
+
+    Error Handling:
+        Implement error handling and notification mechanisms in your Jenkins job. For example, you can add a post-build action to send email notifications on failure.
+
+    Security:
+        Ensure that Jenkins and Terraform configurations are secure. Limit access to sensitive information and credentials.
+
+Remember to adapt the instructions based on your specific setup and requirements.
+User
+explain me why main.tf required in all environments
+ChatGPT
+
+The main.tf file is a core configuration file in Terraform projects, and it is required in all environments because it typically contains the primary infrastructure resources and configurations that are common across environments. Here are some reasons why the main.tf file is necessary in all environments:
+
+    Resource Definitions:
+        The main.tf file is where you define the primary infrastructure resources, such as AWS resources, network configurations, security groups, etc.
+        These resource definitions are common across different environments (dev, stage, prod) because you usually need similar infrastructure components in each environment.
+
+    Reusable Modules:
+        If you are using Terraform modules to organize and reuse infrastructure code, the main.tf file may include module invocations.
+        These module invocations define how to use and configure the reusable modules, and they are typically consistent across environments.
+
+    Variables and Outputs:
+        The main.tf file often includes variable definitions and output blocks.
+        Variables allow you to parameterize your Terraform configurations, enabling you to customize aspects of the infrastructure for each environment.
+        Output blocks define values that are exposed to other Terraform modules or scripts and are often used to share information between components.
+
+    Provider Configuration:
+        Provider configurations for cloud providers (e.g., AWS, Azure, GCP) are commonly defined in the main.tf file.
+        These provider configurations, such as region and authentication details, may differ slightly between environments, but the core structure remains the same.
+
+    Dependency Management:
+        The main.tf file helps manage dependencies between resources and modules.
+        It specifies the relationships between different infrastructure components, ensuring proper provisioning and dependency resolution during Terraform execution.
+
+    Terraform Configuration Blocks:
+        Various Terraform configuration blocks, such as terraform and locals, are often defined in the main.tf file.
+        These blocks provide global configuration settings and local variable definitions that are relevant to the entire Terraform project.
+
+While the main.tf file serves as a central configuration file, it's important to note that Terraform supports modularization, allowing you to organize your code into separate files and directories. This modular structure is especially useful for large projects or when dealing with multiple environments. However, the main.tf file typically remains as the entry point and central configuration file for the entire Terraform project.
+
+In summary, the main.tf file is a crucial part of the Terraform project, providing a common ground for defining infrastructure resources, variables, and configurations that are shared across different environments.
