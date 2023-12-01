@@ -1,0 +1,254 @@
+Directory Structure:
+
+plaintext
+
+root
+│
+├── modules
+│   ├── api_gateway
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   │
+│   ├── lambda_function
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   │
+│   └── cognito_authorizer
+│       ├── main.tf
+│       ├── variables.tf
+│       └── outputs.tf
+│
+├── main.tf
+├── variables.tf
+├── outputs.tf
+└── lambda_function.py
+
+Module Definitions:
+
+API Gateway Module (modules/api_gateway/main.tf):
+
+hcl
+
+# modules/api_gateway/main.tf
+
+resource "aws_api_gateway_rest_api" "private_api" {
+  name        = var.api_name
+  description = "Private REST API"
+  endpoint_configuration {
+    types             = ["PRIVATE"]
+    vpc_endpoint_ids = [var.vpc_endpoint_id]
+  }
+}
+
+hcl
+
+# modules/api_gateway/variables.tf
+
+variable "api_name" {
+  description = "Name of the API Gateway"
+}
+
+variable "vpc_endpoint_id" {
+  description = "ID of the VPC endpoint"
+}
+
+hcl
+
+# modules/api_gateway/outputs.tf
+
+output "api_invoke_url" {
+  value = aws_api_gateway_integration_response.json_response.invoke_url
+}
+
+Lambda Function Module (modules/lambda_function/main.tf):
+
+hcl
+
+# modules/lambda_function/main.tf
+
+resource "aws_lambda_function" "my_lambda_function" {
+  handler          = "lambda_function.lambda_handler"
+  role             = var.lambda_function_role
+  function_name    = var.lambda_function_name
+  s3_bucket        = var.lambda_function_s3_bucket
+  s3_key           = var.lambda_function_s3_key
+  runtime          = "python3.7"
+  architectures    = ["x86_64"]
+  vpc_config {
+    security_group_ids = [var.security_group_id]
+    subnet_ids         = [var.subnet_id]
+  }
+}
+
+hcl
+
+# modules/lambda_function/variables.tf
+
+variable "lambda_function_name" {
+  description = "Name of the Lambda function"
+}
+
+variable "lambda_function_role" {
+  description = "ARN of the Lambda function role"
+}
+
+variable "lambda_function_s3_bucket" {
+  description = "S3 bucket containing Lambda function code"
+}
+
+variable "lambda_function_s3_key" {
+  description = "S3 key for Lambda function code"
+}
+
+variable "security_group_id" {
+  description = "ID of the security group"
+}
+
+variable "subnet_id" {
+  description = "ID of the subnet"
+}
+
+hcl
+
+# modules/lambda_function/outputs.tf
+
+output "lambda_function_arn" {
+  value = aws_lambda_function.my_lambda_function.arn
+}
+
+Cognito Authorizer Module (modules/cognito_authorizer/main.tf):
+
+hcl
+
+# modules/cognito_authorizer/main.tf
+
+resource "aws_apigatewayv2_authorizer" "cognito_authorizer" {
+  api_id             = var.api_gateway_id
+  authorizer_type    = "JWT"
+  identity_sources   = ["$request.header.Authorization"]
+  name               = "cognito-authorizer"
+
+  jwt_configuration {
+    audience             = var.cognito_audience
+    issuer               = var.cognito_issuer
+  }
+}
+
+hcl
+
+# modules/cognito_authorizer/variables.tf
+
+variable "cognito_audience" {
+  description = "Cognito audience"
+}
+
+variable "cognito_issuer" {
+  description = "Cognito issuer"
+}
+
+variable "api_gateway_id" {
+  description = "ID of the API Gateway"
+}
+
+hcl
+
+# modules/cognito_authorizer/outputs.tf
+
+output "cognito_authorizer_id" {
+  value = aws_apigatewayv2_authorizer.cognito_authorizer.id
+}
+
+Main Configuration (main.tf):
+
+hcl
+
+# main.tf
+
+module "api_gateway" {
+  source         = "./modules/api_gateway"
+  api_name       = var.api_name
+  vpc_endpoint_id = var.vpc_endpoint_id
+}
+
+module "lambda_function" {
+  source                   = "./modules/lambda_function"
+  lambda_function_name     = var.lambda_function_name
+  lambda_function_role     = var.lambda_function_role
+  lambda_function_s3_bucket = var.lambda_function_s3_bucket
+  lambda_function_s3_key    = var.lambda_function_s3_key
+  security_group_id        = var.security_group_id
+  subnet_id                 = var.subnet_id
+}
+
+module "cognito_authorizer" {
+  source          = "./modules/cognito_authorizer"
+  cognito_audience = var.cognito_audience
+  cognito_issuer   = var.cognito_issuer
+  api_gateway_id   = module.api_gateway.private_api.id
+}
+
+# ... (other resources)
+
+hcl
+
+# variables.tf
+
+variable "api_name" {
+  description = "Name of the API Gateway"
+}
+
+variable "vpc_endpoint_id" {
+  description = "ID of the VPC endpoint"
+}
+
+variable "lambda_function_name" {
+  description = "Name of the Lambda function"
+}
+
+variable "lambda_function_role" {
+  description = "ARN of the Lambda function role"
+}
+
+variable "lambda_function_s3_bucket" {
+  description = "S3 bucket containing Lambda function code"
+}
+
+variable "lambda_function_s3_key" {
+  description = "S3 key for Lambda function code"
+}
+
+variable "security_group_id" {
+  description = "ID of the security group"
+}
+
+variable "subnet_id" {
+  description = "ID of the subnet"
+}
+
+variable "cognito_audience" {
+  description = "Cognito audience"
+}
+
+variable "cognito_issuer" {
+  description = "Cognito issuer"
+}
+
+hcl
+
+# outputs.tf
+
+output "api_invoke_url" {
+  value = module.api_gateway.api_invoke_url
+}
+
+output "lambda_function_arn" {
+  value = module.lambda_function.lambda_function_arn
+}
+
+output "cognito_authorizer_id" {
+  value = module.cognito_authorizer.cognito_authorizer_id
+}
+
+This revision eliminates hardcoded values and promotes better modularity in the Terraform configuration. Ensure to replace the placeholder values in the variables and configurations with your actual values.
