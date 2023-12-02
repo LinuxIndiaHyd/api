@@ -1,0 +1,158 @@
+terraform which main file will use for apply
+ChatGPT
+
+In a Terraform project with multiple environments and modules, you typically use the main.tf file in the specific environment you want to deploy or apply. The main file used for terraform apply depends on the context of your deployment. Here are some scenarios:
+Scenario 1: Deploying an Entire Environment
+
+If you want to deploy the entire infrastructure for a specific environment (e.g., dev, stage, prod), you would use the main.tf file in that environment's directory.
+
+For example, to deploy the development environment:
+
+bash
+
+cd environments/dev
+terraform apply -var-file=variables.tfvars
+
+In this case, Terraform will use the configurations specified in main.tf within the environments/dev directory.
+Scenario 2: Deploying a Specific Module
+
+If you want to deploy only a specific module within an environment, you might have a separate main.tf file within the module directory. In this case, you would navigate to the module directory and run terraform apply.
+
+For example, to deploy only the API Gateway module:
+
+bash
+
+cd modules/api_gateway
+terraform apply -var-file=variables.tfvars
+
+Terraform will use the configurations specified in the main.tf file within the modules/api_gateway directory.
+Scenario 3: Deploying the Entire Infrastructure
+
+If your root main.tf file orchestrates the deployment of all modules and environments, you can use it to deploy the entire infrastructure.
+
+bash
+
+terraform apply -var-file=variables.tfvars
+
+In this scenario, Terraform will use the configurations specified in the root main.tf file, which likely includes module invocations for various components.
+Notes:
+
+    Always make sure to navigate to the correct directory containing the relevant main.tf file before running terraform apply.
+
+    The -var-file=variables.tfvars argument specifies the path to a variables file that provides values for your Terraform variables. Adjust the path based on your actual file structure.
+
+    Terraform allows you to use multiple configuration files (e.g., main.tf, variables.tf, etc.), and it automatically loads all the configuration files in the current directory.
+
+Choose the scenario that best fits your deployment requirements, whether it's deploying a specific environment, module, or the entire infrastructure.
+
+
+Contents of variables.tf in the Root Directory:
+
+hcl
+
+# variables.tf
+
+variable "api_name" {
+  description = "Name of the API Gateway"
+}
+
+variable "vpc_endpoint_id" {
+  description = "ID of the VPC endpoint"
+}
+
+variable "additional_resources" {
+  description = "Additional resources to be added to the API Gateway"
+  type        = map(object({
+    type                       = string
+    path_part                  = string
+    authorization              = string
+    integration_http_method    = string
+    integration_request_method = string
+    response_templates         = map(string)
+  }))
+  default     = {}
+}
+
+variable "lambda_functions" {
+  description = "Lambda functions configurations"
+  type        = map(object({
+    handler          = string
+    role             = string
+    runtime          = string
+    source_code_hash = string
+    # ... other Lambda function variables
+  }))
+  default     = {}
+}
+
+variable "cognito_authorizers" {
+  description = "Cognito authorizers configurations"
+  type        = map(object({
+    api_id             = string
+    authorizer_type    = string
+    identity_sources   = list(string)
+    jwt_configuration  = map(string)
+    # ... other Cognito authorizer variables
+  }))
+  default     = {}
+}
+
+Contents of environments/dev/variables.tfvars:
+
+hcl
+
+# environments/dev/variables.tfvars
+
+api_name       = "dev-api"
+vpc_endpoint_id = "vpce-dev-id"
+
+additional_resources = {
+  user_resource = {
+    type                       = "aws_api_gateway_resource"
+    path_part                  = "CASCADE"
+    authorization              = "NONE"
+    integration_http_method    = "GET"
+    integration_request_method = "GET"
+    response_templates         = {
+      "application/json" = jsonencode({
+        "statusCode": 200
+      })
+    }
+  }
+}
+
+lambda_functions = {
+  my_lambda_function_1 = {
+    handler          = "lambda_function_1.lambda_handler"
+    role             = "arn:aws:iam::721559817204:role/service-role/test1-role-5ibnv0sx"
+    runtime          = "python3.7"
+    source_code_hash = "abc123" # Replace with your actual source code hash
+  },
+  my_lambda_function_2 = {
+    handler          = "lambda_function_2.lambda_handler"
+    role             = "arn:aws:iam::721559817204:role/service-role/test2-role-5ibnv0sx"
+    runtime          = "python3.8"
+    source_code_hash = "def456" # Replace with your actual source code hash
+  }
+}
+
+cognito_authorizers = {
+  cognito_authorizer_1 = {
+    api_id             = "api_id_1"
+    authorizer_type    = "JWT"
+    identity_sources   = ["$request.header.Authorization"]
+    jwt_configuration  = {
+      audience = "audience_1"
+      issuer   = "issuer_1"
+    }
+  },
+  cognito_authorizer_2 = {
+    api_id             = "api_id_2"
+    authorizer_type    = "JWT"
+    identity_sources   = ["$request.header.Authorization"]
+    jwt_configuration  = {
+      audience = "audience_2"
+      issuer   = "issuer_2"
+    }
+  }
+}
