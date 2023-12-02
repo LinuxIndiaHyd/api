@@ -156,3 +156,336 @@ cognito_authorizers = {
     }
   }
 }
+
+
+============================================
+Contents of variables.tfvars for Each Module:
+modules/api_gateway/variables.tfvars:
+
+hcl
+
+# modules/api_gateway/variables.tfvars
+
+api_name       = "api-gateway"
+vpc_endpoint_id = "vpce-id"
+# ... other variables specific to the api_gateway module
+
+modules/lambda_function/variables.tfvars:
+
+hcl
+
+# modules/lambda_function/variables.tfvars
+
+lambda_function_name     = "lambda-function"
+# ... other variables specific to the lambda_function module
+
+modules/cognito_authorizer/variables.tfvars:
+
+hcl
+
+# modules/cognito_authorizer/variables.tfvars
+
+cognito_audience = "cognito-audience"
+cognito_issuer   = "cognito-issuer"
+# ... other variables specific to the cognito_authorizer module
+
+============================================================
+
+Contents of main.tf for Each Module:
+modules/api_gateway/main.tf:
+
+hcl
+
+# modules/api_gateway/main.tf
+
+resource "aws_api_gateway_rest_api" "private_api" {
+  name        = var.api_name
+  description = "Private REST API"
+  endpoint_configuration {
+    types             = ["PRIVATE"]
+    vpc_endpoint_ids = [var.vpc_endpoint_id]
+  }
+}
+
+# ... other API Gateway configurations
+
+modules/lambda_function/main.tf:
+
+hcl
+
+# modules/lambda_function/main.tf
+
+resource "aws_lambda_function" "my_lambda_function" {
+  handler          = "lambda_function.lambda_handler"
+  role             = var.lambda_function_role
+  function_name    = var.lambda_function_name
+  runtime          = "python3.7"
+  source_code_hash = filebase64("${path.module}/lambda_function.zip")
+
+  # ... other Lambda function configurations
+}
+
+modules/cognito_authorizer/main.tf:
+
+hcl
+
+# modules/cognito_authorizer/main.tf
+
+resource "aws_apigatewayv2_authorizer" "cognito_authorizer" {
+  api_id             = var.api_gateway_id
+  authorizer_type    = "JWT"
+  identity_sources   = ["$request.header.Authorization"]
+  name               = "cognito-authorizer"
+
+  jwt_configuration {
+    audience             = var.cognito_audience
+    issuer               = var.cognito_issuer
+  }
+}
+
+# ... other Cognito authorizer configurations
+
+Notes:
+
+    These examples are basic templates, and you should customize them based on your specific requirements, including AWS region, security configurations, and additional settings.
+
+    The variables used in these main.tf files are referenced from the respective variables.tf files in each module.
+
+    Adjust the resource types, attributes, and settings based on your actual AWS resource configurations.
+
+    For the lambda_function module, it assumes you have a ZIP file (lambda_function.zip) containing your Python code.
+
+================================================================
+
+modules/api_gateway/main.tf:
+
+hcl
+
+# modules/api_gateway/main.tf
+
+resource "aws_api_gateway_rest_api" "private_api" {
+  name        = var.api_name
+  description = "Private REST API"
+  endpoint_configuration {
+    types             = ["PRIVATE"]
+    vpc_endpoint_ids = [var.vpc_endpoint_id]
+  }
+}
+
+# ... other API Gateway configurations
+
+modules/lambda_function/main.tf:
+
+hcl
+
+# modules/lambda_function/main.tf
+
+resource "aws_lambda_function" "my_lambda_function" {
+  handler          = "lambda_function.lambda_handler"
+  role             = var.lambda_function_role
+  function_name    = var.lambda_function_name
+  runtime          = "python3.7"
+  source_code_hash = filebase64("${path.module}/lambda_function.zip")
+
+  # ... other Lambda function configurations
+}
+
+modules/cognito_authorizer/main.tf:
+
+hcl
+
+# modules/cognito_authorizer/main.tf
+
+resource "aws_apigatewayv2_authorizer" "cognito_authorizer" {
+  api_id             = var.api_gateway_id
+  authorizer_type    = "JWT"
+  identity_sources   = ["$request.header.Authorization"]
+  name               = var.cognito_authorizer_name
+
+  jwt_configuration {
+    audience             = var.cognito_audience
+    issuer               = var.cognito_issuer
+  }
+}
+
+# ... other Cognito authorizer configurations
+
+variables.tf in Each Module:
+
+hcl
+
+# modules/api_gateway/variables.tf
+
+variable "api_name" {
+  description = "Name of the API Gateway"
+}
+
+variable "vpc_endpoint_id" {
+  description = "ID of the VPC endpoint"
+}
+
+hcl
+
+# modules/lambda_function/variables.tf
+
+variable "lambda_function_name" {
+  description = "Name of the Lambda function"
+}
+
+variable "lambda_function_role" {
+  description = "ARN of the IAM role for the Lambda function"
+}
+
+hcl
+
+# modules/cognito_authorizer/variables.tf
+
+variable "cognito_authorizer_name" {
+  description = "Name of the Cognito authorizer"
+}
+
+variable "api_gateway_id" {
+  description = "ID of the API Gateway"
+}
+
+variable "cognito_audience" {
+  description = "Cognito audience"
+}
+
+variable "cognito_issuer" {
+  description = "Cognito issuer"
+}
+
+===========================================================
+
+To further modularize and automate the resource declarations in each module, you can create additional abstraction layers using input variables and dynamic blocks. Below is an example that demonstrates how to achieve this:
+modules/api_gateway/main.tf:
+
+hcl
+
+# modules/api_gateway/main.tf
+
+resource "aws_api_gateway_rest_api" "private_api" {
+  name        = var.api_name
+  description = "Private REST API"
+  endpoint_configuration {
+    types             = ["PRIVATE"]
+    vpc_endpoint_ids = [var.vpc_endpoint_id]
+  }
+
+  dynamic "resource" {
+    for_each = var.additional_resources
+    content {
+      type                       = resource.value["type"]
+      path_part                  = resource.value["path_part"]
+      authorization              = resource.value["authorization"]
+      integration_http_method    = resource.value["integration_http_method"]
+      integration_request_method = resource.value["integration_request_method"]
+      response_templates         = resource.value["response_templates"]
+    }
+  }
+}
+
+modules/api_gateway/variables.tf:
+
+hcl
+
+# modules/api_gateway/variables.tf
+
+variable "api_name" {
+  description = "Name of the API Gateway"
+}
+
+variable "vpc_endpoint_id" {
+  description = "ID of the VPC endpoint"
+}
+
+variable "additional_resources" {
+  description = "Additional resources to be added to the API Gateway"
+  type        = map(object({
+    type                       = string
+    path_part                  = string
+    authorization              = string
+    integration_http_method    = string
+    integration_request_method = string
+    response_templates         = map(string)
+  }))
+  default     = {}
+}
+
+modules/lambda_function/main.tf:
+
+hcl
+
+# modules/lambda_function/main.tf
+
+resource "aws_lambda_function" "my_lambda_function" {
+  for_each = var.lambda_functions
+
+  handler          = each.value["handler"]
+  role             = each.value["role"]
+  function_name    = each.key
+  runtime          = each.value["runtime"]
+  source_code_hash = filebase64(each.value["source_code_hash"])
+
+  # ... other Lambda function configurations
+}
+
+modules/lambda_function/variables.tf:
+
+hcl
+
+# modules/lambda_function/variables.tf
+
+variable "lambda_functions" {
+  description = "Lambda functions configurations"
+  type        = map(object({
+    handler          = string
+    role             = string
+    runtime          = string
+    source_code_hash = string
+    # ... other Lambda function variables
+  }))
+  default     = {}
+}
+
+modules/cognito_authorizer/main.tf:
+
+hcl
+
+# modules/cognito_authorizer/main.tf
+
+resource "aws_apigatewayv2_authorizer" "cognito_authorizer" {
+  for_each = var.cognito_authorizers
+
+  api_id             = each.value["api_id"]
+  authorizer_type    = each.value["authorizer_type"]
+  identity_sources   = each.value["identity_sources"]
+  name               = each.key
+
+  jwt_configuration {
+    audience             = each.value["jwt_configuration"]["audience"]
+    issuer               = each.value["jwt_configuration"]["issuer"]
+  }
+
+  # ... other Cognito authorizer configurations
+}
+
+modules/cognito_authorizer/variables.tf:
+
+hcl
+
+# modules/cognito_authorizer/variables.tf
+
+variable "cognito_authorizers" {
+  description = "Cognito authorizers configurations"
+  type        = map(object({
+    api_id             = string
+    authorizer_type    = string
+    identity_sources   = list(string)
+    jwt_configuration  = map(string)
+    # ... other Cognito authorizer variables
+  }))
+  default     = {}
+}
+====================================================================
