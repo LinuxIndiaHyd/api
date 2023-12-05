@@ -232,6 +232,8 @@ output "lambda_function_arn" {
 
 Make sure to replace the source attribute in each module with the correct paths or repository URLs. Adjust the configurations based on your specific requirements and environment.
 
+=========================================================================================
+
 Certainly! Let's complete the Terraform project by providing the variables.tf, outputs.tf, and a sample variables.tfvars file for your root module and the individual modules.
 variables.tf (root directory)
 
