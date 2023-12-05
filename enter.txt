@@ -1,0 +1,233 @@
+Project Structure
+
+lua
+
+project/
+|-- main.tf
+|-- variables.tf
+|-- outputs.tf
+|-- modules/
+|   |-- cognito/
+|   |   |-- main.tf
+|   |   |-- variables.tf
+|   |   |-- outputs.tf
+|   |
+|   |-- api_gateway/
+|   |   |-- main.tf
+|   |   |-- variables.tf
+|   |   |-- outputs.tf
+|   |
+|   |-- lambda_function/
+|       |-- main.tf
+|       |-- variables.tf
+|       |-- outputs.tf
+
+main.tf (root directory)
+
+hcl
+
+provider "aws" {
+  region = var.region
+}
+
+module "cognito" {
+  source               = "./modules/cognito"
+  region               = var.region
+  user_pool_name       = var.cognito_user_pool_name
+}
+
+module "api_gateway" {
+  source               = "./modules/api_gateway"
+  region               = var.region
+  api_gateway_name     = var.api_gateway_name
+  cognito_user_pool_id = module.cognito.cognito_user_pool_id
+}
+
+module "lambda_function" {
+  source                 = "./modules/lambda_function"
+  region                 = var.region
+  lambda_function_name   = var.lambda_function_name
+  cognito_user_pool_id   = module.cognito.cognito_user_pool_id
+  api_gateway_invoke_url = module.api_gateway.api_gateway_invoke_url
+}
+
+# Add more configurations as needed
+
+variables.tf (root directory)
+
+hcl
+
+variable "region" {
+  description = "AWS region"
+  type        = string
+  default     = "us-east-1"  # Change to your desired region
+}
+
+variable "cognito_user_pool_name" {
+  description = "Name for the Cognito User Pool"
+  type        = string
+}
+
+variable "api_gateway_name" {
+  description = "Name for the API Gateway"
+  type        = string
+}
+
+variable "lambda_function_name" {
+  description = "Name for the Lambda function"
+  type        = string
+}
+
+# Add more variables as needed
+
+outputs.tf (root directory)
+
+hcl
+
+output "cognito_user_pool_id" {
+  value = module.cognito.cognito_user_pool_id
+}
+
+output "api_gateway_url" {
+  value = module.api_gateway.api_gateway_invoke_url
+}
+
+output "lambda_function_arn" {
+  value = module.lambda_function.lambda_function_arn
+}
+
+# Add more outputs as needed
+
+modules/cognito/main.tf
+
+hcl
+
+provider "aws" {
+  region = var.region
+}
+
+resource "aws_cognito_user_pool" "my_user_pool" {
+  name = var.user_pool_name
+  # Add more Cognito configurations as needed
+}
+
+resource "aws_cognito_user_pool_client" "my_user_pool_client" {
+  name                     = "my-user-pool-client"
+  user_pool_id             = aws_cognito_user_pool.my_user_pool.id
+  generate_secret          = true
+  allowed_oauth_flows      = ["code"]
+  allowed_oauth_flows_user = true
+  allowed_oauth_scopes     = ["openid"]
+}
+
+output "cognito_user_pool_id" {
+  value = aws_cognito_user_pool.my_user_pool.id
+}
+
+# Add more outputs as needed
+
+modules/api_gateway/main.tf
+
+hcl
+
+provider "aws" {
+  region = var.region
+}
+
+resource "aws_api_gateway_rest_api" "my_api" {
+  name        = var.api_gateway_name
+  description = "My API Gateway"
+}
+
+# Create API Gateway Authorizer (Cognito User Pool Authorizer)
+resource "aws_api_gateway_authorizer" "cognito_authorizer" {
+  name                   = "cognito-authorizer"
+  rest_api_id            = aws_api_gateway_rest_api.my_api.id
+  authorizer_uri         = "arn:aws:cognito-idp:${var.region}:${data.aws_caller_identity.current.account_id}:userpool/${aws_cognito_user_pool.my_user_pool.id}"
+  authorizer_credentials = aws_iam_role.api_gateway_execution_role.arn
+  identity_source        = "method.request.header.Authorization"
+  type                   = "COGNITO_USER_POOLS"
+}
+
+output "api_gateway_invoke_url" {
+  value = aws_api_gateway_deployment.my_api_deployment.invoke_url
+}
+
+# Add more configurations as needed
+
+modules/lambda_function/main.tf
+
+hcl
+
+provider "aws" {
+  region = var.region
+}
+
+resource "aws_lambda_function" "my_lambda_function" {
+  function_name    = var.lambda_function_name
+  handler          = "index.handler"
+  runtime          = "nodejs14.x"
+  # Add more Lambda function configurations as needed
+}
+
+# Create API Gateway Integration with Lambda
+resource "aws_api_gateway_integration" "lambda_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.my_api.id
+  resource_id             = aws_api_gateway_rest_api.my_api.root_resource_id
+  http_method             = "POST"
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.my_lambda_function.invoke_arn
+}
+
+# Create API Gateway Method
+resource "aws_api_gateway_method" "my_api_method" {
+  rest_api_id   = aws_api_gateway_rest_api.my_api.id
+  resource_id   = aws_api_gateway_rest_api.my_api.root_resource_id
+  http_method   = "POST"
+  authorization = aws_api_gateway_authorizer.cognito_authorizer.id
+}
+
+# Create API Gateway Method Response
+resource "aws_api_gateway_method_response" "my_api_method_response" {
+  rest_api_id = aws_api_gateway_rest_api.my_api.id
+  resource_id = aws_api_gateway_rest_api.my_api.root_resource_id
+  http_method = aws_api_gateway_method.my_api_method.http_method
+  status_code = "200"
+}
+
+# Create API Gateway Deployment
+resource "aws_api_gateway_deployment" "my_api_deployment" {
+  depends_on = [
+    aws_api_gateway_method.my_api_method,
+    aws_api_gateway_method_response.my_api_method_response,
+  ]
+  rest_api_id = aws_api_gateway_rest_api.my_api.id
+  stage_name  = "prod"
+}
+
+# Create IAM Role for API Gateway Execution
+resource "aws_iam_role" "api_gateway_execution_role" {
+  name = "api-gateway-execution-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = "sts:AssumeRole",
+        Effect = "Allow",
+        Principal = {
+          Service = "apigateway.amazonaws.com",
+        },
+      },
+    ],
+  })
+}
+
+output "lambda_function_arn" {
+  value = aws_lambda_function.my_lambda_function.arn
+}
+
+# Add more configurations as needed
+
+Make sure to replace the source attribute in each module with the correct paths or repository URLs. Adjust the configurations based on your specific requirements and environment.
