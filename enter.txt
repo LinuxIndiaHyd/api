@@ -231,3 +231,143 @@ output "lambda_function_arn" {
 # Add more configurations as needed
 
 Make sure to replace the source attribute in each module with the correct paths or repository URLs. Adjust the configurations based on your specific requirements and environment.
+
+Certainly! Let's complete the Terraform project by providing the variables.tf, outputs.tf, and a sample variables.tfvars file for your root module and the individual modules.
+variables.tf (root directory)
+
+hcl
+
+variable "region" {
+  description = "AWS region"
+  type        = string
+  default     = "us-east-1"  # Change to your desired region
+}
+
+variable "cognito_user_pool_name" {
+  description = "Name for the Cognito User Pool"
+  type        = string
+}
+
+variable "api_gateway_name" {
+  description = "Name for the API Gateway"
+  type        = string
+}
+
+variable "lambda_function_name" {
+  description = "Name for the Lambda function"
+  type        = string
+}
+
+# Add more variables as needed
+
+outputs.tf (root directory)
+
+hcl
+
+output "cognito_user_pool_id" {
+  value = module.enterprise_gateway.cognito_user_pool_id
+}
+
+output "api_gateway_url" {
+  value = module.enterprise_gateway.api_gateway_url
+}
+
+output "lambda_function_arn" {
+  value = module.enterprise_gateway.lambda_function_arn
+}
+
+# Add more outputs as needed
+
+variables.tfvars (root directory)
+
+hcl
+
+region               = "us-west-2"
+cognito_user_pool_name = "my-cognito-pool"
+api_gateway_name     = "my-api-gateway"
+lambda_function_name = "my-lambda-function"
+
+modules/cognito/variables.tf
+
+hcl
+
+variable "region" {
+  description = "AWS region"
+  type        = string
+}
+
+variable "user_pool_name" {
+  description = "Name for the Cognito User Pool"
+  type        = string
+}
+
+modules/cognito/outputs.tf
+
+hcl
+
+output "cognito_user_pool_id" {
+  value = aws_cognito_user_pool.my_user_pool.id
+}
+
+# Add more outputs as needed
+
+modules/api_gateway/variables.tf
+
+hcl
+
+variable "region" {
+  description = "AWS region"
+  type        = string
+}
+
+variable "api_gateway_name" {
+  description = "Name for the API Gateway"
+  type        = string
+}
+
+variable "cognito_user_pool_id" {
+  description = "ID of the Cognito User Pool"
+  type        = string
+}
+
+modules/api_gateway/outputs.tf
+
+hcl
+
+output "api_gateway_invoke_url" {
+  value = aws_api_gateway_deployment.my_api_deployment.invoke_url
+}
+
+# Add more outputs as needed
+
+modules/lambda_function/variables.tf
+
+hcl
+
+variable "region" {
+  description = "AWS region"
+  type        = string
+}
+
+variable "lambda_function_name" {
+  description = "Name for the Lambda function"
+  type        = string
+}
+
+variable "cognito_user_pool_id" {
+  description = "ID of the Cognito User Pool"
+  type        = string
+}
+
+modules/lambda_function/outputs.tf
+
+hcl
+
+output "lambda_function_arn" {
+  value = aws_lambda_function.my_lambda_function.arn
+}
+
+# Add more outputs as needed
+
+In your root directory, create a variables.tfvars file with your desired configurations. Then, you can use the following commands to initialize and apply the 
+
