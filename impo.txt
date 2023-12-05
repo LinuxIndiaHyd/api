@@ -287,3 +287,149 @@ Expected Results:
 
 
 =====================================================================================================
+
+
+=====================================================================================================
+
+  +----------------------------------+
+  |                                  |
+  |             MASTER               |
+  |            /       \             |
+  |           /         \            |
+  |          /           \           |
+  |    RELEASE         HOTFIX        |
+  |          \           /           |
+  |           \         /            |
+  |            \       /             |
+  |            DEVELOP               |
+  |              |                   |
+  |     +-------------------+       |
+  |     |                   |       |
+  |  FEATURE/           FEATURE/    |
+  | FEATURE-1         FEATURE-2      |
+  |    |                 |          |
+  +----------------------------------+
+
+
+Here's a breakdown of the components in the diagram:
+
+    Master Branch:
+        Represents the stable, production-ready code.
+        Code from release and hotfix branches is merged here.
+
+    Develop Branch:
+        Integration branch for ongoing development.
+        Feature branches are merged here once features are complete and tested.
+
+    Feature Branches:
+        Created by developers for each new feature or task.
+        Developed independently of each other.
+        Merged back into the develop branch when the feature is complete.
+
+    Release Branch:
+        Created when the develop branch is ready for a release.
+        Final testing and bug fixing occur here.
+        Merged into both master and develop branches.
+
+    Hotfix Branch:
+        Created to address critical issues in the production code.
+        Merged into both master and develop branches.
+
+=============================================================================================
+
+  +-------------------+
+  |                   |
+  |    DEVELOP        |
+  |      |            |
+  | +---|---+        |
+  | | FEATURE|        |
+  | | BRANCH |        |
+  | +---|---+        |
+  |     |            |
+  |     v            |
+  |  DEVELOPER       |
+  |  COMMITS         |
+  |     |            |
+  |     v            |
+  | +---|---+        |
+  | | CI/CD |        |
+  | | BUILD |        |
+  | +---|---+        |
+  |     |            |
+  |     v            |
+  |   TESTS          |
+  |     |            |
+  |     v            |
+  | +---|---+        |
+  | | MERGE |        |
+  | | TO    |        |
+  | | DEVELOP|        |
+  | +---|---+        |
+  |     |            |
+  |     v            |
+  |  DEVELOP        |
+  |  COMMITS         |
+  |                   |
+  | +---------------+ |
+  | | RELEASE       | |
+  | | BRANCH        | |
+  | +---|---+       | |
+  |     |           | |
+  |     v           | |
+  |   TESTS         | |
+  |     |           | |
+  |     v           | |
+  | +---|---+       | |
+  | | MERGE |       | |
+  | | TO    |       | |
+  | | MASTER|       | |
+  | +---|---+       | |
+  |     |           | |
+  |     v           | |
+  |   TAGGING       | |
+  |                   |
+  | +---|---+       | |
+  | | CI/CD |       | |
+  | | DEPLOY|-------+ |
+  | +---|---+         |
+  |                   |
+  +-------------------+
+
+
+Here's a breakdown of the components in the diagram:
+
+    Develop Branch:
+        Represents the ongoing development branch.
+        Developers create feature branches from here.
+
+    Feature Branch:
+        Individual branches created by developers for specific features or tasks.
+        Commits and changes are made on the feature branch.
+
+    CI/CD Build:
+        Continuous Integration/Continuous Deployment process triggered on each push to the feature branch.
+        Builds the code, runs tests, and ensures the feature branch is in a deployable state.
+
+    Merge to Develop:
+        Successful feature branches are merged back into the develop branch.
+
+    Release Branch:
+        Created when the develop branch is ready for release.
+        Commits on the release branch may include version updates and final preparations.
+
+    Tests on Release Branch:
+        Additional testing is performed on the release branch to ensure stability.
+
+    Merge to Master:
+        Successful release branches are merged into the master branch.
+        A version tag is applied to the master branch.
+
+    CI/CD Deployment:
+        Continuous Deployment process triggered on each push to the master branch.
+        Deploys the code to the production environment.
+
+This flowchart outlines a simplified workflow, and the actual CI/CD process may involve more stages and tools depending on the specific requirements of your project. It's important to adapt the flow to your team's needs and incorporate any additional steps or tools necessary for your deployment pipeline.
+
+=================================================================
+
+
