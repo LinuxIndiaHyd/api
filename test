@@ -324,4 +324,41 @@ export const handler = async (event, context) => {
         };
     }
 };
+==================================================================================================
+
+import { S3 } from 'aws-sdk';
+
+export const handler = async (event, context) => {
+    try {
+        // Ensure that the event has Records property and it's an array
+        if (!event.Records || !Array.isArray(event.Records) || event.Records.length === 0) {
+            console.error('Invalid S3 event structure:', event);
+            return {
+                statusCode: 400,
+                body: 'Invalid S3 event structure',
+            };
+        }
+
+        // Retrieve the bucket and object key from the first record
+        const bucket = event.Records[0].s3.bucket.name;
+        const key = decodeURIComponent(event.Records[0].s3.object.key.replace(/\+/g, ' '));
+
+        console.log(`File uploaded: ${key} in bucket ${bucket}`);
+
+        // Add your processing logic here
+        // For example, read the file from S3, process it, etc.
+
+        return {
+            statusCode: 200,
+            body: 'File processing successful',
+        };
+    } catch (error) {
+        console.error(`Error: ${error}`);
+        return {
+            statusCode: 500,
+            body: `Error: ${error.message}`,
+        };
+    }
+};
+=========================================================================
 
