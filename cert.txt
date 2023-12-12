@@ -426,8 +426,7 @@ project-root/
             └── main.tf
 ==========================================
 
-
-import { S3 } from 'aws-sdk';
+import { S3, ACM } from 'aws-sdk';
 
 export const handler = async (event, context) => {
     try {
@@ -444,14 +443,18 @@ export const handler = async (event, context) => {
         const bucket = event.Records[0].s3.bucket.name;
         const key = decodeURIComponent(event.Records[0].s3.object.key.replace(/\+/g, ' '));
 
-        console.log(`File uploaded: ${key} in bucket ${bucket}`);
+        console.log(`Certificate uploaded: ${key} in bucket ${bucket}`);
 
-        // Add your processing logic here
-        // For example, read the file from S3, process it, etc.
+        // Check the status of the certificate
+        const certificateStatus = await checkCertificateStatus(bucket, key);
+
+        console.log(`Certificate status: ${certificateStatus}`);
+
+        // You can add your own logic based on the certificate status
 
         return {
             statusCode: 200,
-            body: 'File processing successful',
+            body: `Certificate processing successful. Status: ${certificateStatus}`,
         };
     } catch (error) {
         console.error(`Error: ${error}`);
@@ -461,4 +464,28 @@ export const handler = async (event, context) => {
         };
     }
 };
-=================================================================
+
+async function checkCertificateStatus(bucket, key) {
+    const s3 = new S3();
+    const acm = new ACM();
+
+    // Download the certificate from S3
+    const certificateData = await s3.getObject({ Bucket: bucket, Key: key }).promise();
+    const certificateBuffer = certificateData.Body;
+
+    // Convert the certificate to a string (assuming it's PEM format)
+    const certificateString = certificateBuffer.toString();
+
+    // Check the certificate status using ACM (AWS Certificate Manager)
+    const acmResponse = await acm.importCertificate({
+        Certificate: certificateString,
+        CertificateChain: '', // Include the chain if applicable
+        PrivateKey: '', // Include the private key if applicable
+    }).promise();
+
+    // Retrieve the status from the ACM response
+    const certificateStatus = acmResponse.CertificateArn ? 'Imported successfully' : 'Import failed';
+
+    return certificateStatus;
+}
+===================================================
