@@ -1,3 +1,56 @@
+
+provider "aws" {
+  region = "us-east-1"  # Change this to your desired AWS region
+}
+
+# Input variables
+variable "existing_api_gateway_id" {
+  description = "The ID of the existing API Gateway"
+  type        = string
+}
+
+variable "acm_certificate_arn" {
+  description = "The ARN of the ACM certificate"
+  type        = string
+}
+
+# Fetch API Gateway information
+data "aws_api_gateway_rest_api" "existing_api_gateway" {
+  rest_api_id = var.existing_api_gateway_id
+}
+
+# Fetch ACM certificate information
+data "aws_acm_certificate" "acm_certificate" {
+  arn = var.acm_certificate_arn
+}
+
+# Create custom domain name for existing API Gateway
+resource "aws_api_gateway_domain_name" "custom_domain" {
+  domain_name              = "example-api-domain.com"
+  certificate_arn          = data.aws_acm_certificate.acm_certificate.arn
+  security_policy          = "TLS_1_2"
+  endpoint_configuration {
+    types = ["REGIONAL"]
+  }
+}
+
+# Create base path mapping
+resource "aws_api_gateway_base_path_mapping" "base_path_mapping" {
+  rest_api_id   = data.aws_api_gateway_rest_api.existing_api_gateway.id
+  domain_name   = aws_api_gateway_domain_name.custom_domain.domain_name
+  stage_name    = "prod"  # Adjust the stage name as needed
+}
+
+# Output custom domain information
+output "custom_domain_info" {
+  value = {
+    domain_name = aws_api_gateway_domain_name.custom_domain.domain_name
+    base_path   = aws_api_gateway_base_path_mapping.base_path_mapping.base_path
+  }
+}
+
+=====================================================================
+=======================================================================
 provider "aws" {
   region = "us-east-1"  # Set your desired AWS region
 }
