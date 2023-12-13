@@ -1,0 +1,142 @@
+main.tf
+
+hcl
+
+provider "aws" {
+  region = var.region
+}
+
+variable "region" {
+  description = "AWS region for deployment"
+  type        = string
+  default     = "us-east-1" # Change this to your desired AWS region
+}
+
+variable "company_name" {
+  description = "Name of your company"
+  type        = string
+  default     = "Your Company"
+}
+
+variable "services" {
+  description = "List of service configurations"
+  type        = list(object({
+    type = string
+    name = string
+    # Add additional service-specific attributes here
+  }))
+}
+
+# Dynamic resource creation
+resource "aws_servicecatalog_portfolio" "organization_portfolio" {
+  name          = "Organization Portfolio"
+  display_name  = "Organization Portfolio"
+  provider_name = var.company_name
+}
+
+resource "aws_servicecatalog_product" "organization_products" {
+  for_each = { for service in var.services : service.name => service }
+
+  name        = each.value.name
+  owner       = var.company_name
+  description = "Product description"
+
+  provisioning_artifact {
+    name        = "1.0.0"
+    description = "Initial release"
+    info = {
+      type = each.value.type
+      # Add service-specific details here
+    }
+  }
+
+  tags = {
+    # Add your product tags here
+  }
+
+  portfolio_id = aws_servicecatalog_portfolio.organization_portfolio.id
+}
+======================================================================
+variables.tf
+
+hcl
+
+variable "region" {
+  description = "AWS region for deployment"
+  type        = string
+  default     = "us-east-1" # Change this to your desired AWS region
+}
+
+variable "company_name" {
+  description = "Name of your company"
+  type        = string
+  default     = "Your Company"
+}
+
+variable "services" {
+  description = "List of service configurations"
+  type        = list(object({
+    type = string
+    name = string
+    # Add additional service-specific attributes here
+  }))
+}
+=======================================================================================
+variables.tfvars
+
+hcl
+
+region       = "us-west-2" # Replace with your desired region
+company_name = "Your Company"
+services = [
+  {
+    type = "aws_iam_role"
+    name = "organization_iam_role"
+    # Add IAM role configuration here
+  },
+  {
+    type = "aws_lambda_function"
+    name = "organization_lambda_function"
+    # Add Lambda function configuration here
+  },
+  {
+    type = "aws_s3_bucket"
+    name = "organization_bucket"
+    # Add S3 bucket configuration here
+  },
+  {
+    type = "aws_api_gateway_rest_api"
+    name = "organization_api"
+    # Add API Gateway configuration here
+  },
+  {
+    type = "aws_acm_certificate"
+    name = "organization_certificate"
+    # Add ACM certificate configuration here
+  },
+  {
+    type = "aws_vpc"
+    name = "organization_vpc"
+    # Add VPC configuration here
+  },
+  {
+    type = "aws_subnet"
+    name = "organization_subnet"
+    # Add Subnet configuration here
+  },
+  {
+    type = "aws_cloudwatch_dashboard"
+    name = "organization_dashboard"
+    # Add CloudWatch dashboard configuration here
+  },
+  {
+    type = "aws_cloudtrail"
+    name = "organization_trail"
+    # Add CloudTrail configuration here
+  },
+  {
+    type = "aws_vpc_endpoint"
+    name = "organization_vpc_endpoint"
+    # Add VPC Endpoint configuration here
+  },
+]
