@@ -1,0 +1,110 @@
+# main.tf
+
+provider "aws" {
+  region = var.aws_region
+}
+
+# Create an S3 bucket
+resource "aws_s3_bucket" "my_bucket" {
+  bucket = var.s3_bucket_name
+  acl    = "private"
+}
+
+# Create an ACM certificate
+resource "aws_acm_certificate" "my_certificate" {
+  domain_name       = var.acm_domain_name
+  validation_method = "DNS"
+
+  tags = {
+    Name = "MyCertificate"
+  }
+}
+
+# Create an API Gateway
+resource "aws_api_gateway_rest_api" "my_api" {
+  name        = "MyAPI"
+  description = "My API Gateway"
+}
+
+# Create a product catalog entry (Example: AWS Marketplace Catalog)
+resource "aws_marketplace_catalog" "my_product" {
+  name        = var.marketplace_product_name
+  description = "My Product Description"
+}
+
+# Create a portfolio
+resource "aws_servicecatalog_portfolio" "my_portfolio" {
+  name        = var.service_catalog_portfolio_name
+  display_name = "My Portfolio Display Name"
+  provider_name = "My Provider"
+}
+
+# Link the product to the portfolio
+resource "aws_servicecatalog_portfolio_product_association" "product_association" {
+  product_id     = aws_marketplace_catalog.my_product.id
+  portfolio_id   = aws_servicecatalog_portfolio.my_portfolio.id
+}
+
+# Create an S3 bucket policy to allow public read access (adjust as needed)
+resource "aws_s3_bucket_policy" "public_bucket_policy" {
+  bucket = aws_s3_bucket.my_bucket.bucket
+
+  policy = var.s3_bucket_policy
+}
+======================================================
+# variables.tf
+
+variable "aws_region" {
+  description = "The AWS region where resources will be created."
+  type        = string
+  default     = "us-east-1"
+}
+
+variable "s3_bucket_name" {
+  description = "The name of the S3 bucket."
+  type        = string
+}
+
+variable "acm_domain_name" {
+  description = "The domain name for ACM certificate validation."
+  type        = string
+}
+
+variable "marketplace_product_name" {
+  description = "The name of the Marketplace product."
+  type        = string
+}
+
+variable "service_catalog_portfolio_name" {
+  description = "The name of the Service Catalog portfolio."
+  type        = string
+}
+
+variable "s3_bucket_policy" {
+  description = "The policy for the S3 bucket. Adjust as needed."
+  type        = string=
+  default     = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::${aws_s3_bucket.my_bucket.bucket}/*"
+    }
+  ]
+}
+EOF
+}
+============================================================
+
+# variables.tfvars
+
+s3_bucket_name                  = "my-unique-bucket-name"
+acm_domain_name                 = "example.com"
+marketplace_product_name        = "MyProduct"
+service_catalog_portfolio_name  = "MyPortfolio"
+
+================================
+
