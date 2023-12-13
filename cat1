@@ -1,0 +1,174 @@
+main.tf
+
+hcl
+
+provider "aws" {
+  region = "us-east-1" # Change this to your desired AWS region
+}
+
+variable "services" {
+  default = [
+    {
+      type = "aws_iam_role"
+      name = "lambda_execution_role"
+      # Add IAM role configuration here
+    },
+    {
+      type = "aws_lambda_function"
+      name = "example_lambda_function"
+      # Add Lambda function configuration here
+    },
+    {
+      type = "aws_s3_bucket"
+      name = "example_bucket"
+      # Add S3 bucket configuration here
+    },
+    {
+      type = "aws_api_gateway_rest_api"
+      name = "example_api"
+      # Add API Gateway configuration here
+    },
+    {
+      type = "aws_acm_certificate"
+      name = "example_certificate"
+      # Add ACM certificate configuration here
+    },
+    {
+      type = "aws_vpc"
+      name = "example_vpc"
+      # Add VPC configuration here
+    },
+    {
+      type = "aws_subnet"
+      name = "example_subnet"
+      # Add Subnet configuration here
+    },
+    {
+      type = "aws_cloudwatch_dashboard"
+      name = "example_dashboard"
+      # Add CloudWatch dashboard configuration here
+    },
+    {
+      type = "aws_cloudtrail"
+      name = "example_trail"
+      # Add CloudTrail configuration here
+    },
+    {
+      type = "aws_vpc_endpoint"
+      name = "example_vpc_endpoint"
+      # Add VPC Endpoint configuration here
+    },
+  ]
+}
+
+# Dynamic resource creation
+resource "aws_servicecatalog_portfolio" "example_portfolio" {
+  name          = "Example Portfolio"
+  display_name  = "Example Portfolio"
+  provider_name = "Your Company"
+}
+
+resource "aws_servicecatalog_product" "example_products" {
+  for_each = { for service in var.services : service.name => service }
+
+  name        = each.value.name
+  owner       = "Your Company"
+  description = "Product description"
+
+  provisioning_artifact {
+    name        = "1.0.0"
+    description = "Initial release"
+    info = {
+      type = each.value.type
+      # Add service-specific details here
+    }
+  }
+
+  tags = {
+    # Add your product tags here
+  }
+
+  portfolio_id = aws_servicecatalog_portfolio.example_portfolio.id
+}
+=============================================================================
+variables.tf
+
+variable "region" {
+  description = "AWS region for deployment"
+  type        = string
+  default     = "us-east-1" # Change this to your desired AWS region
+}
+
+variable "company_name" {
+  description = "Name of your company"
+  type        = string
+  default     = "Your Company"
+}
+
+variable "services" {
+  description = "List of service configurations"
+  type = list(object({
+    type     = string
+    name     = string
+    # Add additional service-specific attributes here
+    # For example, you might add attributes like bucket_name, lambda_function_name, etc.
+  }))
+}
+===============================================================================
+variables.tfvars
+
+hcl
+
+services = [
+  {
+    type = "aws_iam_role"
+    name = "lambda_execution_role"
+    # Add IAM role configuration here
+  },
+  {
+    type = "aws_lambda_function"
+    name = "example_lambda_function"
+    # Add Lambda function configuration here
+  },
+  {
+    type = "aws_s3_bucket"
+    name = "example_bucket"
+    # Add S3 bucket configuration here
+  },
+  {
+    type = "aws_api_gateway_rest_api"
+    name = "example_api"
+    # Add API Gateway configuration here
+  },
+  {
+    type = "aws_acm_certificate"
+    name = "example_certificate"
+    # Add ACM certificate configuration here
+  },
+  {
+    type = "aws_vpc"
+    name = "example_vpc"
+    # Add VPC configuration here
+  },
+  {
+    type = "aws_subnet"
+    name = "example_subnet"
+    # Add Subnet configuration here
+  },
+  {
+    type = "aws_cloudwatch_dashboard"
+    name = "example_dashboard"
+    # Add CloudWatch dashboard configuration here
+  },
+  {
+    type = "aws_cloudtrail"
+    name = "example_trail"
+    # Add CloudTrail configuration here
+  },
+  {
+    type = "aws_vpc_endpoint"
+    name = "example_vpc_endpoint"
+    # Add VPC Endpoint configuration here
+  },
+]
+====================================================
