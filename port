@@ -1,0 +1,81 @@
+main.tf:
+
+hcl
+
+provider "aws" {
+  region = var.aws_region
+}
+
+resource "aws_organizations_organization" "organization" {}
+
+resource "aws_servicecatalog_portfolio" "org_portfolio" {
+  provider_name = aws_organizations_organization.organization.roots[0].arn
+  name          = var.portfolio_name
+  display_name  = var.portfolio_display_name
+  description   = var.portfolio_description
+}
+
+variable "aws_services" {
+  type    = list(string)
+  default = ["S3", "API Gateway", "Lambda", "DynamoDB", "CloudWatch", "CloudTrail", "VPC", "VPCe", "Subnet", "IAM"]
+}
+
+resource "aws_servicecatalog_portfolio_product_association" "org_products" {
+  for_each      = toset(var.aws_services)
+  portfolio_id = aws_servicecatalog_portfolio.org_portfolio.id
+  product_name = each.value
+}
+
+variable "aws_region" {
+  description = "The AWS region to deploy resources."
+  type        = string
+  default     = "us-east-1" # Change it to your desired default region
+}
+
+variable "portfolio_name" {
+  description = "Name of the Service Catalog Portfolio"
+  type        = string
+}
+
+variable "portfolio_display_name" {
+  description = "Display Name of the Service Catalog Portfolio"
+  type        = string
+}
+
+variable "portfolio_description" {
+  description = "Description of the Service Catalog Portfolio"
+  type        = string
+}
+
+variables.tf:
+
+hcl
+
+variable "aws_region" {
+  description = "The AWS region to deploy resources."
+  type        = string
+}
+
+variable "portfolio_name" {
+  description = "Name of the Service Catalog Portfolio"
+  type        = string
+}
+
+variable "portfolio_display_name" {
+  description = "Display Name of the Service Catalog Portfolio"
+  type        = string
+}
+
+variable "portfolio_description" {
+  description = "Description of the Service Catalog Portfolio"
+  type        = string
+}
+
+variables.tfvars:
+
+hcl
+
+aws_region                = "us-west-2"
+portfolio_name            = "MyServiceCatalogPortfolio"
+portfolio_display_name    = "My Service Catalog Portfolio"
+portfolio_description     = "Portfolio containing various AWS services"
