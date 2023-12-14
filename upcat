@@ -1,0 +1,131 @@
+provisioning_artifact {
+    name        = "1.0.0"
+    description = "Initial release"
+    info = {
+      type                = each.value.type
+      name                = each.value.name
+      # Common attributes
+      region              = var.region
+      company_name        = var.company_name
+      # Service-specific attributes
+      bucket_name         = each.value.type == "aws_s3_bucket" ? each.value.bucket_name : null
+      lambda_function_name = each.value.type == "aws_lambda_function" ? each.value.lambda_function_name : null
+      vpc_id              = each.value.type == "aws_vpc" ? each.value.vpc_id : null
+      api_name            = each.value.type == "aws_api_gateway_rest_api" ? each.value.api_name : null
+      certificate_name    = each.value.type == "aws_acm_certificate" ? each.value.certificate_name : null
+      subnet_id           = each.value.type == "aws_subnet" ? each.value.subnet_id : null
+      dashboard_name      = each.value.type == "aws_cloudwatch_dashboard" ? each.value.dashboard_name : null
+      trail_name          = each.value.type == "aws_cloudtrail" ? each.value.trail_name : null
+      vpc_endpoint_name   = each.value.type == "aws_vpc_endpoint" ? each.value.vpc_endpoint_name : null
+      http_api_name       = each.value.type == "aws_apigatewayv2_api" ? each.value.http_api_name : null
+      # Add more attributes as needed based on your requirements
+    }
+}
+
+Make sure to include the necessary attributes in your variables.tfvars file for the HTTP API service:
+
+hcl
+
+region       = "us-west-2"
+company_name = "Your Company"
+services = [
+  {
+    type                 = "aws_iam_role"
+    name                 = "organization_iam_role"
+    # Add IAM role configuration here
+  },
+  {
+    type                 = "aws_lambda_function"
+    name                 = "organization_lambda_function"
+    lambda_function_name = "example_lambda_function"
+    # Add Lambda function configuration here
+  },
+  {
+    type          = "aws_s3_bucket"
+    name          = "organization_bucket"
+    bucket_name   = "example_bucket"
+    # Add S3 bucket configuration here
+  },
+  {
+    type                 = "aws_api_gateway_rest_api"
+    name                 = "organization_api"
+    api_name             = "example_api"
+    # Add API Gateway configuration here
+  },
+  {
+    type                 = "aws_acm_certificate"
+    name                 = "organization_certificate"
+    certificate_name     = "example_certificate"
+    # Add ACM certificate configuration here
+  },
+  {
+    type          = "aws_vpc"
+    name          = "organization_vpc"
+    vpc_id        = "example_vpc_id"
+    # Add VPC configuration here
+  },
+  {
+    type          = "aws_subnet"
+    name          = "organization_subnet"
+    subnet_id     = "example_subnet_id"
+    # Add Subnet configuration here
+  },
+  {
+    type                 = "aws_cloudwatch_dashboard"
+    name                 = "organization_dashboard"
+    dashboard_name       = "example_dashboard"
+    # Add CloudWatch dashboard configuration here
+  },
+  {
+    type                 = "aws_cloudtrail"
+    name                 = "organization_trail"
+    trail_name           = "example_trail"
+    # Add CloudTrail configuration here
+  },
+  {
+    type                 = "aws_vpc_endpoint"
+    name                 = "organization_vpc_endpoint"
+    vpc_endpoint_name    = "example_vpc_endpoint"
+    # Add VPC Endpoint configuration here
+  },
+  {
+    type                 = "aws_apigatewayv2_api"
+    name                 = "organization_http_api"
+    http_api_name        = "example_http_api"
+    # Add HTTP API configuration here
+  },
+]
+
+Adjust the attribute names and values based on your actual requirements for the HTTP API.
+
+variable "region" {
+  description = "AWS region for deployment"
+  type        = string
+  default     = "us-east-1" # Change this to your desired AWS region
+}
+
+variable "company_name" {
+  description = "Name of your company"
+  type        = string
+  default     = "Your Company"
+}
+
+variable "services" {
+  description = "List of service configurations"
+  type        = list(object({
+    type                 = string
+    name                 = string
+    # Add additional service-specific attributes here
+    bucket_name          = string
+    lambda_function_name = string
+    vpc_id               = string
+    api_name             = string
+    certificate_name     = string
+    subnet_id            = string
+    dashboard_name       = string
+    trail_name           = string
+    vpc_endpoint_name    = string
+    http_api_name        = string
+  }))
+}
+================================
