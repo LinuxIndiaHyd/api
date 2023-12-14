@@ -1,3 +1,86 @@
+provider "aws" {
+  region = var.region
+}
+
+variable "region" {
+  description = "AWS region for deployment"
+  type        = string
+  default     = "us-east-1" # Change this to your desired AWS region
+}
+
+variable "company_name" {
+  description = "Name of your company"
+  type        = string
+  default     = "Your Company"
+}
+
+variable "services" {
+  description = "List of service configurations"
+  type        = list(object({
+    type                 = string
+    name                 = string
+    bucket_name          = string
+    lambda_function_name = string
+    vpc_id               = string
+    api_name             = string
+    certificate_name     = string
+    subnet_id            = string
+    dashboard_name       = string
+    trail_name           = string
+    vpc_endpoint_name    = string
+    http_api_name        = string
+  }))
+}
+
+# Dynamic resource creation
+resource "aws_servicecatalog_portfolio" "organization_portfolio" {
+  name          = "Organization Portfolio"
+  display_name  = "Organization Portfolio"
+  provider_name = var.company_name
+}
+
+resource "aws_servicecatalog_product" "organization_products" {
+  for_each = { for service in var.services : service.name => service }
+
+  name        = each.value.name
+  owner       = var.company_name
+  description = "Product description"
+
+  provisioning_artifact {
+    name        = "1.0.0"
+    description = "Initial release"
+    type        = each.value.type
+
+    service_attributes = merge(
+      {
+        name          = each.value.name
+        region        = var.region
+        company_name  = var.company_name
+      },
+      each.value.type == "aws_s3_bucket" ? { bucket_name          = each.value.bucket_name } : {},
+      each.value.type == "aws_lambda_function" ? { lambda_function_name = each.value.lambda_function_name } : {},
+      each.value.type == "aws_vpc" ? { vpc_id               = each.value.vpc_id } : {},
+      each.value.type == "aws_api_gateway_rest_api" ? { api_name             = each.value.api_name } : {},
+      each.value.type == "aws_acm_certificate" ? { certificate_name     = each.value.certificate_name } : {},
+      each.value.type == "aws_subnet" ? { subnet_id            = each.value.subnet_id } : {},
+      each.value.type == "aws_cloudwatch_dashboard" ? { dashboard_name       = each.value.dashboard_name } : {},
+      each.value.type == "aws_cloudtrail" ? { trail_name           = each.value.trail_name } : {},
+      each.value.type == "aws_vpc_endpoint" ? { vpc_endpoint_name    = each.value.vpc_endpoint_name } : {},
+      each.value.type == "aws_apigatewayv2_api" ? { http_api_name        = each.value.http_api_name } : {},
+    )
+  }
+
+  tags = {
+    # Add your product tags here
+  }
+
+  portfolio_id = aws_servicecatalog_portfolio.organization_portfolio.id
+}
+
+
+
+
+==============================================================================
 provisioning_artifact {
     name        = "1.0.0"
     description = "Initial release"
