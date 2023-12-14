@@ -1,4 +1,19 @@
-provider "aws" {
+aws_services = [
+  { name = "S3", product_id = aws_servicecatalog_cloudformation_product.s3_product.id },
+  { name = "API Gateway", product_id = aws_servicecatalog_cloudformation_product.api_gateway_product.id },
+  { name = "Lambda", product_id = aws_servicecatalog_cloudformation_product.lambda_product.id },
+  { name = "DynamoDB", product_id = aws_servicecatalog_cloudformation_product.dynamodb_product.id },
+  { name = "Certificate Manager", product_id = aws_servicecatalog_cloudformation_product.cert_manager_product.id },
+  { name = "CloudWatch", product_id = aws_servicecatalog_cloudformation_product.cloudwatch_product.id },
+  { name = "CloudTrail", product_id = aws_servicecatalog_cloudformation_product.cloudtrail_product.id },
+  { name = "VPC", product_id = aws_servicecatalog_cloudformation_product.vpc_product.id },
+  { name = "VPC Endpoint", product_id = aws_servicecatalog_cloudformation_product.vpce_product.id },
+  { name = "Subnet", product_id = aws_servicecatalog_cloudformation_product.subnet_product.id },
+  { name = "IAM", product_id = aws_servicecatalog_cloudformation_product.iam_product.id },
+]
+
+=======================================================
+=provider "aws" {
   region = var.region
 }
 
