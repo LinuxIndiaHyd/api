@@ -1,3 +1,127 @@
+provider "aws" {
+  region = var.aws_region
+}
+
+resource "aws_servicecatalog_portfolio" "my_portfolio" {
+  name          = var.portfolio_name
+  display_name  = var.portfolio_display_name
+  description   = var.portfolio_description
+}
+
+resource "aws_servicecatalog_portfolio_product_association" "portfolio_products" {
+  for_each      = toset({ for s in var.aws_services : s.name => s.product_id })
+  portfolio_id = aws_servicecatalog_portfolio.my_portfolio.id
+  product_id    = each.value
+}
+
+# S3 Service
+resource "aws_servicecatalog_cloudformation_product" "s3_product" {
+  name         = "S3"
+  owner        = "AWS"
+  description  = "Amazon S3 - Simple Storage Service"
+  provisioner  = "CloudFormation"
+  provisioning_artifact_parameters {
+    name          = "Default"
+    description   = "Default version"
+    info {
+      load_template_from_url = "https://s3.amazonaws.com/cloudformation-templates-us-east-1/S3_Website_With_CloudFront.yaml"
+    }
+  }
+}
+
+# API Gateway Service
+resource "aws_servicecatalog_cloudformation_product" "api_gateway_product" {
+  name         = "API Gateway"
+  owner        = "AWS"
+  description  = "Amazon API Gateway"
+  provisioner  = "CloudFormation"
+  # Add the necessary configuration for API Gateway
+}
+
+# Lambda Service
+resource "aws_servicecatalog_cloudformation_product" "lambda_product" {
+  name         = "Lambda"
+  owner        = "AWS"
+  description  = "AWS Lambda"
+  provisioner  = "CloudFormation"
+  # Add the necessary configuration for Lambda
+}
+
+# DynamoDB Service
+resource "aws_servicecatalog_cloudformation_product" "dynamodb_product" {
+  name         = "DynamoDB"
+  owner        = "AWS"
+  description  = "Amazon DynamoDB"
+  provisioner  = "CloudFormation"
+  # Add the necessary configuration for DynamoDB
+}
+
+# Certificate Manager Service
+resource "aws_servicecatalog_cloudformation_product" "cert_manager_product" {
+  name         = "Certificate Manager"
+  owner        = "AWS"
+  description  = "AWS Certificate Manager"
+  provisioner  = "CloudFormation"
+  # Add the necessary configuration for Certificate Manager
+}
+
+# CloudWatch Service
+resource "aws_servicecatalog_cloudformation_product" "cloudwatch_product" {
+  name         = "CloudWatch"
+  owner        = "AWS"
+  description  = "Amazon CloudWatch"
+  provisioner  = "CloudFormation"
+  # Add the necessary configuration for CloudWatch
+}
+
+# CloudTrail Service
+resource "aws_servicecatalog_cloudformation_product" "cloudtrail_product" {
+  name         = "CloudTrail"
+  owner        = "AWS"
+  description  = "AWS CloudTrail"
+  provisioner  = "CloudFormation"
+  # Add the necessary configuration for CloudTrail
+}
+
+# VPC Service
+resource "aws_servicecatalog_cloudformation_product" "vpc_product" {
+  name         = "VPC"
+  owner        = "AWS"
+  description  = "Amazon Virtual Private Cloud (VPC)"
+  provisioner  = "CloudFormation"
+  # Add the necessary configuration for VPC
+}
+
+# VPC Endpoint Service
+resource "aws_servicecatalog_cloudformation_product" "vpce_product" {
+  name         = "VPC Endpoint"
+  owner        = "AWS"
+  description  = "Amazon VPC Endpoint"
+  provisioner  = "CloudFormation"
+  # Add the necessary configuration for VPC Endpoint
+}
+
+# Subnet Service
+resource "aws_servicecatalog_cloudformation_product" "subnet_product" {
+  name         = "Subnet"
+  owner        = "AWS"
+  description  = "Amazon VPC Subnet"
+  provisioner  = "CloudFormation"
+  # Add the necessary configuration for Subnet
+}
+
+# IAM Service
+resource "aws_servicecatalog_cloudformation_product" "iam_product" {
+  name         = "IAM"
+  owner        = "AWS"
+  description  = "AWS Identity and Access Management (IAM)"
+  provisioner  = "CloudFormation"
+  # Add the necessary configuration for IAM
+}
+
+
+
+===============================================================================
 aws_services = [
   { name = "S3", product_id = aws_servicecatalog_cloudformation_product.s3_product.id },
   { name = "API Gateway", product_id = aws_servicecatalog_cloudformation_product.api_gateway_product.id },
