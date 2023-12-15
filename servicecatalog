@@ -1,0 +1,79 @@
+variables.tf
+
+hcl
+
+variable "region" {
+  description = "AWS region"
+  type        = string
+  default     = "us-east-1"
+}
+
+variable "services" {
+  description = "Map of services to include in Service Catalog"
+  type        = map(string)
+  default     = {
+    s3              = "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/s3-template.yaml"
+    api_gateway     = "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/api-gateway-template.yaml"
+    lambda          = "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/lambda-template.yaml"
+    certificate_mgr = "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/certificate-manager-template.yaml"
+    dynamodb        = "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/dynamodb-template.yaml"
+    cloudwatch      = "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/cloudwatch-template.yaml"
+    cloudtrail      = "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/cloudtrail-template.yaml"
+    vpc             = "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/vpc-template.yaml"
+    vpce            = "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/vpce-template.yaml"
+    subnet          = "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/subnet-template.yaml"
+    iam             = "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/iam-template.yaml"
+    region          = "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/region-template.yaml"
+  }
+}
+
+variables.tfvars
+
+hcl
+
+region = "us-east-1"
+services = {
+  s3              = "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/s3-template.yaml"
+  api_gateway     = "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/api-gateway-template.yaml"
+  lambda          = "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/lambda-template.yaml"
+  certificate_mgr = "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/certificate-manager-template.yaml"
+  dynamodb        = "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/dynamodb-template.yaml"
+  cloudwatch      = "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/cloudwatch-template.yaml"
+  cloudtrail      = "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/cloudtrail-template.yaml"
+  vpc             = "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/vpc-template.yaml"
+  vpce            = "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/vpce-template.yaml"
+  subnet          = "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/subnet-template.yaml"
+  iam             = "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/iam-template.yaml"
+  region          = "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/region-template.yaml"
+}
+
+main.tf
+
+hcl
+
+provider "aws" {
+  region = var.region
+}
+
+resource "aws_servicecatalog_portfolio" "service_portfolios" {
+  for_each = var.services
+
+  name        = "${each.key}_portfolio"
+  display_name = "${capitalize(each.key)} Service Catalog Portfolio"
+}
+
+resource "aws_servicecatalog_cloudformation_product" "service_products" {
+  for_each = var.services
+
+  name        = "${each.key}_product"
+  owner       = "BUteam"
+  description = "${capitalize(each.key)} Service Catalog Product"
+
+  provisioning_artifact_parameters {
+    info {
+      load_template_from_url = each.value
+    }
+  }
+
+  portfolio_id = aws_servicecatalog_portfolio.service_portfolios[each.key].id
+}
