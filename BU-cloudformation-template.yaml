@@ -1,0 +1,154 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  LambdaFunctionName:
+    Type: String
+    Default: "BULambdaFunction"
+
+Resources:
+  BUS3Bucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: "bu-service-catalog-templates-bucket"
+      AccessControl: "Private"
+
+  BUApiGateway:
+    Type: "AWS::ApiGateway::RestApi"
+    Properties:
+      Name: "BUApiGateway"
+
+  BULambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      FunctionName: !Ref LambdaFunctionName
+      Handler: "index.handler"
+      Role: "arn:aws:iam::xxxxxxxxxxxx:role/your-lambda-role"
+      Runtime: "nodejs14.x"
+      Code:
+        S3Bucket: !Ref BUS3Bucket
+        S3Key: "lambda/bu-lambda-function.zip"
+
+  BUDynamoDBTable:
+    Type: "AWS::DynamoDB::Table"
+    Properties:
+      TableName: "BUDynamoDBTable"
+      AttributeDefinitions:
+        - AttributeName: "ID"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "ID"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  BUCertificate:
+    Type: "AWS::CertificateManager::Certificate"
+    Properties:
+      DomainName: "budomain.com"
+      ValidationMethod: "DNS"
+
+  BUCloudWatchAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+      AlarmName: "BUCloudWatchAlarm"
+      ComparisonOperator: "GreaterThanThreshold"
+      EvaluationPeriods: 1
+      MetricName: "BUMetric"
+      Namespace: "AWS/Lambda"
+      Period: 60
+      Statistic: "Average"
+      Threshold: 1
+      AlarmActions:
+        - "arn:aws:sns:us-east-1:xxxxxxxxxxxx:BUSnsTopicArn"
+
+  BUCloudTrail:
+    Type: "AWS::CloudTrail::Trail"
+    Properties:
+      S3BucketName: !Ref BUS3Bucket
+      IsLogging: true
+
+  BUVPC:
+    Type: "AWS::EC2::VPC"
+    Properties:
+      CidrBlock: "10.0.0.0/16"
+
+  BUVPCE:
+    Type: "AWS::EC2::VPCEndpoint"
+    Properties:
+      VpcId: !Ref BUVPC
+      ServiceName: "com.amazonaws.us-east-1.s3"
+
+  BUSubnet:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      VpcId: !Ref BUVPC
+      CidrBlock: "10.0.0.0/24"
+
+  BUIAMRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: "BUIAMRole"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action: "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+
+  BUServiceCatalogPortfolio:
+    Type: "AWS::ServiceCatalog::Portfolio"
+    Properties:
+      DisplayName: "BUServiceCatalogPortfolio"
+
+  BUServiceCatalogProduct:
+    Type: "AWS::ServiceCatalog::CloudFormationProduct"
+    Properties:
+      Name: "BUServiceCatalogProduct"
+      Owner: "BUteam"
+      Description: "BU Service Catalog Product"
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/bu-cloudformation-template.yaml"
+
+Outputs:
+  S3BucketName:
+    Description: "The name of the S3 bucket."
+    Value: !Ref BUS3Bucket
+
+  LambdaFunctionArn:
+    Description: "The ARN of the Lambda function."
+    Value: !GetAtt BULambdaFunction.Arn
+
+  DynamoDBTableName:
+    Description: "The name of the DynamoDB table."
+    Value: !Ref BUDynamoDBTable
+
+  CertificateArn:
+    Description: "The ARN of the Certificate."
+    Value: !Ref BUCertificate
+
+  VPCId:
+    Description: "The ID of the VPC."
+    Value: !Ref BUVPC
+
+  VPCEId:
+    Description: "The ID of the VPC Endpoint."
+    Value: !Ref BUVPCE
+
+  SubnetId:
+    Description: "The ID of the Subnet."
+    Value: !Ref BUSubnet
+
+  IAMRoleArn:
+    Description: "The ARN of the IAM Role."
+    Value: !GetAtt BUIAMRole.Arn
+
+  ServiceCatalogPortfolioId:
+    Description: "The ID of the Service Catalog Portfolio."
+    Value: !Ref BUServiceCatalogPortfolio
+
+  ServiceCatalogProductId:
+    Description: "The ID of the Service Catalog Product."
+    Value: !Ref BUServiceCatalogProduct
