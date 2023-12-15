@@ -1,0 +1,151 @@
+main.tf
+
+hcl
+
+provider "aws" {
+  region = "us-east-1"  # Change this to your desired region
+}
+
+# Create an IAM role for the product
+resource "aws_iam_role" "product_role" {
+  name = "service-catalog-product-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Action = "sts:AssumeRole",
+      Effect = "Allow",
+      Principal = {
+        Service = "servicecatalog.amazonaws.com"
+      }
+    }]
+  })
+}
+
+# Create an S3 bucket for the CloudFormation template
+resource "aws_s3_bucket" "template_bucket" {
+  bucket = "BU-service-catalog-templates-bucket"  # Change this to a unique bucket name
+  acl    = "private"
+}
+
+# Upload your CloudFormation template to the S3 bucket
+resource "aws_s3_bucket_object" "template_object" {
+  bucket = aws_s3_bucket.template_bucket.bucket
+  key    = "BU-cloudformation-template.yaml"  # Change this to your template file name
+  source = "path/to/your/cloudformation-template.yaml"  # Change this to the path of your template file
+  acl    = "private"
+}
+
+# Create an AWS Service Catalog product
+resource "aws_servicecatalog_product" "BU_product" {
+  name        = "BUProduct"
+  owner       = "BUteam"
+  description = "BU Service Catalog Product"
+
+  provision_product_plan_id = aws_servicecatalog_provisioned_product_plan.BU_product_plan.id
+}
+
+# Create a product version for the AWS Service Catalog product
+resource "aws_servicecatalog_provisioning_artifact" "BU_product_version" {
+  name     = "1.0"
+  product_id = aws_servicecatalog_product.BU_product.id
+
+  info {
+    description = "Version 1.0"
+  }
+
+  provisioning_artifact_parameters {
+    name = aws_s3_bucket_object.template_object.id
+  }
+}
+
+# Create a CloudFormation template constraint
+resource "aws_servicecatalog_launch_template_constraint" "BU_constraint" {
+  portfolio_id = aws_servicecatalog_portfolio.BU_portfolio.id
+  product_id   = aws_servicecatalog_product.BU_product.id
+
+  parameters {
+    type  = "TEMPLATE"
+    value = aws_servicecatalog_provisioning_artifact.BU_product_version.id
+  }
+}
+
+# Associate the product with a portfolio
+resource "aws_servicecatalog_associate_product_with_portfolio" "BU_associate" {
+  product_id   = aws_servicecatalog_product.BU_product.id
+  portfolio_id = aws_servicecatalog_portfolio.BU_portfolio.id
+}
+
+# Create a provisioning plan for the AWS Service Catalog product
+resource "aws_servicecatalog_provisioned_product_plan" "BU_product_plan" {
+  name             = "BUProductPlan"
+  product_id       = aws_servicecatalog_product.BU_product.id
+  plan_type        = "CLOUDFORMATION"
+  update_token     = aws_servicecatalog_provisioned_product.BU_product.id
+  notification_arn = "arn:aws:sns:us-east-1:account-id:topic-name"  # Change this to your SNS topic ARN
+}
+
+==========================================================
+
+# Variables for AWS region
+variable "aws_region" {
+  description = "The AWS region in which resources will be provisioned."
+  type        = string
+  default     = "us-east-1"
+}
+
+# Variables for S3 bucket
+variable "s3_bucket_name" {
+  description = "The name of the S3 bucket to store CloudFormation templates."
+  type        = string
+  default     = "BU-service-catalog-templates-bucket"
+}
+
+# Variables for CloudFormation template
+variable "template_file_path" {
+  description = "The local path to the CloudFormation template file."
+  type        = string
+  default     = "path/to/your/cloudformation-template.yaml"
+}
+
+# Variables for AWS Service Catalog product
+variable "product_name" {
+  description = "The name of the AWS Service Catalog product."
+  type        = string
+  default     = "BUProduct"
+}
+
+variable "product_owner" {
+  description = "The owner of the AWS Service Catalog product."
+  type        = string
+  default     = "BUteam"
+}
+
+# Variables for AWS SNS topic ARN (for notifications)
+variable "sns_topic_arn" {
+  description = "The ARN of the AWS SNS topic for notifications."
+  type        = string
+  default     = "arn:aws:sns:us-east-1:account-id:topic-name"
+}
+
+================================================================
+
+    terraform.tfvars
+
+hcl
+
+# AWS region
+aws_region = "us-east-1"
+
+# S3 bucket
+s3_bucket_name = "BU-service-catalog-templates-bucket"
+
+# CloudFormation template
+template_file_path = "path/to/your/cloudformation-template.yaml"
+
+# AWS Service Catalog product
+product_name  = "BUProduct"
+product_owner = "BUteam"
+
+# AWS SNS topic ARN (for notifications)
+sns_topic_arn = "arn:aws:sns:us-east-1:account-id:topic-name"
