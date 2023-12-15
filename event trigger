@@ -1,0 +1,42 @@
+provider "aws" {
+  region = "us-east-1" # Replace with your desired region
+}
+
+resource "aws_lambda_function" "example_lambda" {
+  function_name = "my_lambda_function" # Replace with your Lambda function name
+  handler      = "index.handler"
+  runtime      = "nodejs14.x" # Adjust based on your Lambda runtime
+
+  # Other Lambda function configuration goes here
+}
+
+resource "aws_cloudwatch_event_rule" "example_event_rule" {
+  name        = "my_event_rule" # Replace with your desired rule name
+  description = "My Event Rule"
+
+  event_pattern = <<PATTERN
+{
+  "source": ["aws.s3"],
+  "detail-type": ["AWS API Call via CloudTrail"],
+  "detail": {
+    "eventSource": ["s3.amazonaws.com"],
+    "eventName": ["PutObject"]
+  }
+}
+PATTERN
+}
+
+resource "aws_cloudwatch_event_target" "example_event_target" {
+  rule      = aws_cloudwatch_event_rule.example_event_rule.name
+  target_id = "my_lambda_target"
+
+  arn = aws_lambda_function.example_lambda.arn
+}
+
+# Optionally, you may need to grant permission for EventBridge to invoke the Lambda function
+resource "aws_lambda_permission" "example_lambda_permission" {
+  statement_id  = "AllowEventBridgeToInvokeLambda"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.example_lambda.function_name
+  principal     = "events.amazonaws.com"
+}
