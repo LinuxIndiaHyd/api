@@ -1,0 +1,135 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  Region:
+    Type: String
+    Default: "us-east-1"
+    AllowedValues:
+      - us-east-1
+      - us-west-2
+      # Add more regions as needed
+
+Resources:
+  S3Product:
+    Type: "AWS::ServiceCatalog::CloudFormationProduct"
+    Properties:
+      Name: "S3Product"
+      Owner: "BUteam"
+      Description: "S3 Service Catalog Product"
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/s3-template.yaml"
+
+  APIGatewayProduct:
+    Type: "AWS::ServiceCatalog::CloudFormationProduct"
+    Properties:
+      Name: "APIGatewayProduct"
+      Owner: "BUteam"
+      Description: "API Gateway Service Catalog Product"
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/api-gateway-template.yaml"
+
+  LambdaProduct:
+    Type: "AWS::ServiceCatalog::CloudFormationProduct"
+    Properties:
+      Name: "LambdaProduct"
+      Owner: "BUteam"
+      Description: "Lambda Service Catalog Product"
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/lambda-template.yaml"
+
+  CertificateManagerProduct:
+    Type: "AWS::ServiceCatalog::CloudFormationProduct"
+    Properties:
+      Name: "CertificateManagerProduct"
+      Owner: "BUteam"
+      Description: "Certificate Manager Service Catalog Product"
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/certificate-manager-template.yaml"
+
+  DynamoDBProduct:
+    Type: "AWS::ServiceCatalog::CloudFormationProduct"
+    Properties:
+      Name: "DynamoDBProduct"
+      Owner: "BUteam"
+      Description: "DynamoDB Service Catalog Product"
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/dynamodb-template.yaml"
+
+  CloudWatchProduct:
+    Type: "AWS::ServiceCatalog::CloudFormationProduct"
+    Properties:
+      Name: "CloudWatchProduct"
+      Owner: "BUteam"
+      Description: "CloudWatch Service Catalog Product"
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/cloudwatch-template.yaml"
+
+  CloudTrailProduct:
+    Type: "AWS::ServiceCatalog::CloudFormationProduct"
+    Properties:
+      Name: "CloudTrailProduct"
+      Owner: "BUteam"
+      Description: "CloudTrail Service Catalog Product"
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/cloudtrail-template.yaml"
+
+  VPCProduct:
+    Type: "AWS::ServiceCatalog::CloudFormationProduct"
+    Properties:
+      Name: "VPCProduct"
+      Owner: "BUteam"
+      Description: "VPC Service Catalog Product"
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/vpc-template.yaml"
+
+  VPCEProduct:
+    Type: "AWS::ServiceCatalog::CloudFormationProduct"
+    Properties:
+      Name: "VPCEProduct"
+      Owner: "BUteam"
+      Description: "VPCE Service Catalog Product"
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/vpce-template.yaml"
+
+  SubnetProduct:
+    Type: "AWS::ServiceCatalog::CloudFormationProduct"
+    Properties:
+      Name: "SubnetProduct"
+      Owner: "BUteam"
+      Description: "Subnet Service Catalog Product"
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/subnet-template.yaml"
+
+  IAMProduct:
+    Type: "AWS::ServiceCatalog::CloudFormationProduct"
+    Properties:
+      Name: "IAMProduct"
+      Owner: "BUteam"
+      Description: "IAM Service Catalog Product"
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/iam-template.yaml"
+
+  RegionProduct:
+    Type: "AWS::ServiceCatalog::CloudFormationProduct"
+    Properties:
+      Name: "RegionProduct"
+      Owner: "BUteam"
+      Description: "Region Service Catalog Product"
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: "https://s3.amazonaws.com/bu-service-catalog-templates-bucket/region-template.yaml"
+      ProvisioningArtifactPreferences:
+        StackSetAccounts:
+          - "account-id-1"
+          - "account-id-2"
