@@ -1,0 +1,153 @@
+2. IAM Role (iam.yaml)
+
+yaml
+
+Resources:
+  MyIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: my-iam-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: my-iam-policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                Resource: "*"
+
+3. DynamoDB Table (dynamodb.yaml)
+
+yaml
+
+Resources:
+  MyDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: my-dynamodb-table
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+4. API Gateway (apigw.yaml)
+
+yaml
+
+Resources:
+  MyApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: my-api-gateway
+
+5. Lambda Function (lambda.yaml)
+
+yaml
+
+Resources:
+  MyLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: my-lambda-function
+      Handler: index.handler
+      Role: arn:aws:iam::your-account-id:role/my-iam-role
+      FunctionName: my-lambda-function
+      Code:
+        S3Bucket: your-s3-bucket
+        S3Key: lambda.zip
+      Runtime: nodejs14.x
+
+6. Certificate Manager (certificatemanager.yaml)
+
+yaml
+
+Resources:
+  MyCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: mydomain.com
+      ValidationMethod: DNS
+
+7. CloudWatch (cloudwatch.yaml)
+
+yaml
+
+Resources:
+  MyCloudWatchAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: my-cloudwatch-alarm
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Period: 300
+      Statistic: Average
+      Threshold: 90
+      ActionsEnabled: true
+
+8. CloudTrail (cloudtrail.yaml)
+
+yaml
+
+Resources:
+  MyCloudTrail:
+    Type: AWS::CloudTrail::Trail
+    Properties:
+      S3BucketName: your-cloudtrail-s3-bucket
+      IsLogging: true
+
+9. VPC (vpc.yaml)
+
+yaml
+
+Resources:
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+
+10. VPC Endpoint (vpce.yaml)
+
+yaml
+
+Resources:
+  MyVPCEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: com.amazonaws.your-service
+      VpcId: vpc-12345678
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: "*"
+            Resource: "*"
+
+11. Subnet (subnet.yaml)
+
+yaml
+
+Resources:
+  MySubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: vpc-12345678
+      CidrBlock: 10.0.0.0/24
+      AvailabilityZone: us-east-1a
