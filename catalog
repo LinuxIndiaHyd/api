@@ -1,3 +1,17 @@
+# Associate Products with Portfolios
+resource "aws_servicecatalog_portfolio_association" "associations" {
+  for_each = aws_servicecatalog_portfolio.portfolios
+
+  portfolio_id = each.value.id
+
+  for product_key, product_value in aws_servicecatalog_product.products {
+    if product_value.portfolio_id == each.value.id {
+      product_id = product_value.id
+      break
+    }
+  }
+}
+====================================================================================
 main.tf
 
 hcl
