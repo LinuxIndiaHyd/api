@@ -1,0 +1,65 @@
+provider "aws" {
+  region = "us-east-1"  # Set your desired region
+}
+
+# Define an AWS Service Catalog product
+resource "aws_servicecatalog_product" "bu_product" {
+  name          = "BUProduct"
+  owner         = "BUTeam"
+  provisioner   = "terraform"
+  provisioning_artifact {
+    name          = "v1.0.0"
+    description   = "Version 1.0.0"
+  }
+}
+
+# Define an AWS Service Catalog portfolio
+resource "aws_servicecatalog_portfolio" "bu_portfolio" {
+  name = "BUPortfolio"
+}
+
+# Associate the product with the portfolio
+resource "aws_servicecatalog_portfolio_product_association" "bu_association" {
+  portfolio_id = aws_servicecatalog_portfolio.bu_portfolio.id
+  product_id   = aws_servicecatalog_product.bu_product.id
+}
+
+# Define an AWS Service Catalog constraint set (optional, adjust as needed)
+resource "aws_servicecatalog_constraint" "bu_constraint" {
+  product_id = aws_servicecatalog_product.bu_product.id
+  type       = "STACKSET"
+}
+
+# Define the AWS Service Catalog product template
+resource "aws_servicecatalog_provisioned_product_plan" "bu_plan" {
+  name            = "BUProvisioningPlan"
+  product_id      = aws_servicecatalog_product.bu_product.id
+  plan_type       = "CLOUDFORMATION_TEMPLATE"
+  provisioned_product_name = "BUProvisionedProduct"
+  path_id         = aws_servicecatalog_portfolio.bu_portfolio.id
+  provisioning_artifact_id = aws_servicecatalog_product.bu_product.provisioning_artifact[0].id
+  tags = {
+    environment = "production"
+  }
+}
+
+# Define the CloudFormation template for your product
+resource "aws_servicecatalog_cloudformation_product" "bu_cloudformation_product" {
+  name             = "BUCloudFormationProduct"
+  owner            = "BUTeam"
+  provisioning_artifact {
+    name          = "v1.0.0"
+    description   = "Version 1.0.0"
+    info {
+      load_template_from_url = "https://raw.githubusercontent.com/your/template/url/main/template.yaml"
+    }
+  }
+}
+
+# Define constraints for the CloudFormation product (optional, adjust as needed)
+resource "aws_servicecatalog_portfolio_product_association" "bu_cloudformation_association" {
+  portfolio_id = aws_servicecatalog_portfolio.bu_portfolio.id
+  product_id   = aws_servicecatalog_cloudformation_product.bu_cloudformation_product.id
+}
+
+# Add other resources (S3, API Gateway, Lambda, etc.) within your CloudFormation template
