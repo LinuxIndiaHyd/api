@@ -1,0 +1,44 @@
+
+
+
+====================================================
+resource "aws_wafregional_web_acl" "okta_waf_acl" {
+  # ... (other configuration)
+
+  depends_on = [
+    aws_wafregional_rule.okta_rule,
+  ]
+}
+
+resource "aws_wafregional_rule" "okta_rule" {
+  name        = "okta-rule"
+  metric_name = "OktaRuleMetric"
+
+  predicates {
+    data_id = aws_wafregional_byte_match_set.okta_byte_match_set.id
+    negated = false
+    type    = "ByteMatch"
+  }
+
+  actions {
+    type = "BLOCK"
+  }
+}
+
+resource "aws_wafregional_byte_match_set" "okta_byte_match_set" {
+  name = "okta-byte-match-set"
+
+  byte_match_tuples {
+    field_to_match {
+      type = "HEADER"
+      data = "Authorization"
+    }
+    target_string = "Okta"
+    positional_constraint = "CONTAINS"
+  }
+}
+
+output "web_acl_id" {
+  value = aws_wafregional_web_acl.okta_waf_acl.id
+  # Add other outputs as needed
+}
