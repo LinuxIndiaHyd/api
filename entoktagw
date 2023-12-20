@@ -1,3 +1,37 @@
+output "web_acl_id" {
+  description = "ID of the WAF Web ACL"
+  value       = module.aws_waf.web_acl_id
+}
+
+output "cognito_pool_id" {
+  description = "ID of the Cognito User Pool"
+  value       = module.aws_cognito.cognito_pool_id
+}
+
+output "dynamodb_table" {
+  description = "DynamoDB Table resource"
+  value       = module.dynamodb.dynamodb_table
+}
+
+output "http_api_id" {
+  description = "ID of the HTTP API Gateway"
+  value       = module.http_api_gateway.http_api_id
+}
+
+output "lambda_function_id" {
+  description = "ID of the Lambda Function"
+  value       = module.lambda.lambda_function_id
+}
+
+output "lambda_invoke_url" {
+  description = "Invoke URL of the Lambda Function"
+  value       = module.lambda.lambda_invoke_url
+}
+
+
+
+
+==================================================================
 Project Structure:
 
 plaintext
