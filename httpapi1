@@ -1,0 +1,72 @@
+provider "aws" {
+  region = "us-east-1"  # Change this to your desired AWS region
+}
+
+# Create DynamoDB table
+resource "aws_dynamodb_table" "example_table" {
+  name           = "example-table"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "id"
+  attribute {
+    name = "id"
+    type = "S"
+  }
+}
+
+# Create Lambda function
+resource "aws_lambda_function" "example_function" {
+  function_name = "example-function"
+  handler      = "index.handler"
+  runtime      = "nodejs14.x"
+  filename     = "path/to/your/lambda/zip/file.zip"
+}
+
+# Create Cognito User Pool and Client
+resource "aws_cognito_user_pool" "example_pool" {
+  name = "example-pool"
+}
+
+resource "aws_cognito_user_pool_client" "example_client" {
+  name                   = "example-client"
+  user_pool_id           = aws_cognito_user_pool.example_pool.id
+  generate_secret        = false
+  allowed_oauth_flows    = ["implicit"]
+  allowed_oauth_scopes   = ["openid"]
+  callback_urls          = ["https://example.com/callback"]
+  supported_identity_providers = ["COGNITO"]
+}
+
+# Create API Gateway V2
+resource "aws_apigatewayv2_api" "example_api" {
+  name          = "example-api"
+  protocol_type = "HTTP"
+}
+
+# Create API Gateway V2 Integration with Lambda
+resource "aws_apigatewayv2_integration" "example_integration" {
+  api_id          = aws_apigatewayv2_api.example_api.id
+  integration_uri = aws_lambda_function.example_function.invoke_arn
+}
+
+# Create API Gateway V2 Authorizer
+resource "aws_apigatewayv2_authorizer" "example_authorizer" {
+  api_id          = aws_apigatewayv2_api.example_api.id
+  name            = "example-authorizer"
+  authorizer_type = "JWT"
+  identity_sources = ["$request.header.Authorization"]
+}
+
+# Create API Gateway V2 Route
+resource "aws_apigatewayv2_route" "example_route" {
+  api_id    = aws_apigatewayv2_api.example_api.id
+  route_key = "$default"
+  target    = aws_apigatewayv2_integration.example_integration.id
+  authorizer_id = aws_apigatewayv2_authorizer.example_authorizer.id
+}
+
+# Create API Gateway V2 Stage
+resource "aws_apigatewayv2_stage" "example_stage" {
+  api_id = aws_apigatewayv2_api.example_api.id
+  name   = "example-stage"
+  auto_deploy = true
+}
