@@ -1,0 +1,275 @@
+provider "aws" {
+  region = "us-west-2"  # Replace with your desired region
+}
+
+resource "aws_api_gateway_rest_api" "private_api" {
+  name        = "TerraformPrivateAPI-stich"
+  description = "Private REST API"
+  endpoint_configuration {
+    types = ["PRIVATE"]
+    vpc_endpoint_ids = ["vpce-06ecd4fcc84fae044"]
+  }
+}
+
+resource "aws_api_gateway_resource" "user_resource" {
+  rest_api_id = aws_api_gateway_rest_api.private_api.id
+  parent_id   = aws_api_gateway_rest_api.private_api.root_resource_id
+  path_part   = "CASCADE"
+}
+
+resource "aws_api_gateway_method" "get_method" {
+  rest_api_id   = aws_api_gateway_rest_api.private_api.id
+  resource_id   = aws_api_gateway_resource.user_resource.id
+  http_method   = "GET"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "mock_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.private_api.id
+  resource_id             = aws_api_gateway_resource.user_resource.id
+  http_method             = aws_api_gateway_method.get_method.http_method
+  integration_http_method = "GET"
+  type                    = "MOCK"
+  request_templates = {
+    "application/json" = jsonencode({
+      "statusCode": 200
+    })
+  }
+}
+
+resource "aws_api_gateway_integration_response" "json_response" {
+  depends_on = [aws_api_gateway_integration.mock_integration]
+  rest_api_id     = aws_api_gateway_rest_api.private_api.id
+  resource_id     = aws_api_gateway_resource.user_resource.id
+  http_method     = aws_api_gateway_method.get_method.http_method
+  status_code     = 200
+  response_templates = {
+    "application/json" = <<JSON
+{
+  "action":"cascade read is successful for terraform deployment"
+}
+JSON
+  }
+}
+
+resource "aws_api_gateway_method_response" "json_response" {
+  depends_on = [aws_api_gateway_integration_response.json_response]
+  rest_api_id = aws_api_gateway_rest_api.private_api.id
+  resource_id = aws_api_gateway_resource.user_resource.id
+  http_method = aws_api_gateway_method.get_method.http_method
+  status_code = aws_api_gateway_integration_response.json_response.status_code
+
+  response_parameters = {
+    "method.response.header.Content-Type" = true
+  }
+
+  response_models = {
+    "application/json" = "Empty"  # Use "Empty" to specify an empty response body
+  }
+}
+
+resource "aws_api_gateway_deployment" "deployment" {
+  rest_api_id = aws_api_gateway_rest_api.private_api.id
+
+  triggers = {
+   redeployment = sha1(jsonencode([
+      aws_api_gateway_resource.user_resource.id,
+      aws_api_gateway_method.get_method.id,
+      aws_api_gateway_integration.mock_integration.id,
+    ])) }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_api_gateway_stage" "stage" {
+  deployment_id = aws_api_gateway_deployment.deployment.id
+  rest_api_id   = aws_api_gateway_rest_api.private_api.id
+  stage_name    = "UAT"
+}
+
+resource "aws_api_gateway_method_settings" "example" {
+  rest_api_id = aws_api_gateway_rest_api.private_api.id
+  stage_name  = aws_api_gateway_stage.stage.stage_name
+  method_path = "*/*"
+
+  settings {
+    metrics_enabled = false
+  }
+}
+
+resource "aws_api_gateway_deployment" "uat_deployment" {
+  rest_api_id = aws_api_gateway_rest_api.private_api.id
+  stage_name  = aws_api_gateway_stage.stage.stage_name
+
+  triggers = {
+   redeployment = sha1(jsonencode([
+      aws_api_gateway_resource.user_resource.id,
+      aws_api_gateway_method.get_method.id,
+      aws_api_gateway_integration.mock_integration.id,
+    ])) }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+
+resource "aws_api_gateway_rest_api_policy" "api_gateway_resource_policy" {
+  rest_api_id  = aws_api_gateway_rest_api.private_api.id
+  policy = jsonencode({
+
+  "Version": "2012-10-17",
+  "Statement"= [
+    {
+      "Effect"= "Allow",
+      "Principal"= "*",
+      "Action"= "execute-api:Invoke",
+      "Resource"= "arn:aws:execute-api:us-west-2:721559817204:${aws_api_gateway_rest_api.private_api.id}/*/*/*/"
+    }
+  ]
+})
+}
+
+
+output "api_invoke_url" {
+  value = "https://${aws_api_gateway_integration_response.json_response.rest_api_id}.execute-api.us-west-2.amazonaws.com/${aws_api_gateway_stage.stage.stage_name}/${aws_api_gateway_resource.user_resource.path_part}/"
+}
+
+
+# Create a local file containing the Python code
+resource "local_file" "lambda_code" {
+  content = <<EOF
+import json
+import requests
+
+def lambda_handler(event, context):
+    # Replace with your actual VPC endpoint URL
+    endpoint_url = "https://${aws_api_gateway_integration_response.json_response.rest_api_id}.execute-api.us-west-2.amazonaws.com/${aws_api_gateway_stage.stage.stage_name}/${aws_api_gateway_resource.user_resource.path_part}/"
+
+    # Replace with your desired HTTP method and headers
+    http_method = "GET"
+    headers = {
+        "Content-Type": "application/json",
+        # Add any other headers you might need
+    }
+
+    try:
+        response = requests.request(http_method, endpoint_url, headers=headers)
+
+        # Process the response
+        if response.status_code == 200:
+            response_data = response.json()
+            return {
+                "statusCode": 200,
+                "body": json.dumps(response_data)
+            }
+        else:
+            return {
+                "statusCode": response.status_code,
+                "body": "Error calling the API"
+            }
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "body": f"Error: {str(e)}"
+        }
+EOF
+
+  filename = "lambda_function.py"
+}
+
+# Zip the Python file
+data "archive_file" "lambda_my_function" {
+  type             = "zip"
+  source_file      = "${path.module}/${local_file.lambda_code.filename}"
+  output_file_mode = "0777"
+  output_path      = "${path.module}/lambda_function.zip"
+}
+
+# Move the ZIP file to S3 bucket
+resource "aws_s3_object" "lambda_code_s3" {
+  bucket = "tera-testing-dep"
+  key    = "lambda_function.zip"
+  source = "${data.archive_file.lambda_my_function.output_path}"
+}
+
+
+resource "aws_lambda_function" "my_lambda_function" {
+  handler = "lambda_function.lambda_handler"
+  role = "arn:aws:iam::721559817204:role/service-role/test1-role-5ibnv0sx"
+  function_name = "lambda-pvtcall-terraform-stich"
+
+    s3_bucket = "tera-testing-dep"
+    s3_key = "${resource.aws_s3_object.lambda_code_s3.key}"
+
+  layers = [
+    "arn:aws:lambda:us-west-2:721559817204:layer:requests2:1"
+  ]
+  runtime = "python3.7"
+  architectures = [
+    "x86_64"
+  ]
+  vpc_config {
+    security_group_ids = ["sg-03c94200a77c40816"]
+    subnet_ids = ["subnet-0e181ab1176adefe9"]
+  }
+}
+
+output "lambda_function_arn" {
+  value = aws_lambda_function.my_lambda_function.arn
+}
+
+
+# Define the HTTP API
+resource "aws_apigatewayv2_api" "http_api" {
+  name          = "Terraform-http-api-stich"
+  protocol_type = "HTTP"
+}
+
+# Define the integration with the existing internal Lambda function
+resource "aws_apigatewayv2_integration" "lambda_integration" {
+  api_id          = aws_apigatewayv2_api.http_api.id
+  payload_format_version = "2.0"
+  integration_type = "AWS_PROXY"
+  integration_uri  = aws_lambda_function.my_lambda_function.invoke_arn  # Replace with your Lambda ARN
+  connection_type  = "INTERNET"
+}
+
+# Define the route for GET /user and associate with the integration
+resource "aws_apigatewayv2_route" "user_route" {
+  api_id    = aws_apigatewayv2_api.http_api.id
+  route_key = "GET /user"
+
+  target = "integrations/${aws_apigatewayv2_integration.lambda_integration.id}"
+  authorization_type   = "JWT"
+  authorizer_id = aws_apigatewayv2_authorizer.okta_authorizer.id
+}
+
+# Define the Okta JWT authorizer
+resource "aws_apigatewayv2_authorizer" "okta_authorizer" {
+  api_id             = aws_apigatewayv2_api.http_api.id
+  authorizer_type    = "JWT"
+  identity_sources   = ["$request.header.Authorization"]
+  name               = "okta-authorizer"
+
+  jwt_configuration {
+    audience          = ["api-jwt-test"]  # Replace with your Okta client ID
+    issuer            = "https://dev-8875902.okta.com/oauth2/ausb0kwovlBtgY6tt5d7"  # Replace with your Okta domain
+  }
+}
+
+# Attach the authorizer to the stage
+resource "aws_apigatewayv2_stage" "default_stage" {
+  api_id      = aws_apigatewayv2_api.http_api.id
+  name        = "default"
+  auto_deploy = true
+}
+
+# Output the invoke URL of the API
+output "api_url" {
+  value = aws_apigatewayv2_api.http_api.api_endpoint
+}
+
+
