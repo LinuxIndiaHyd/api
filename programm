@@ -1,0 +1,64 @@
+provider "aws" {
+  region = "us-east-1"  # Change this to your desired AWS region
+}
+
+# Create DynamoDB table
+resource "aws_dynamodb_table" "example_table" {
+  name           = "example-table"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "id"
+  attribute {
+    name = "id"
+    type = "S"
+  }
+}
+
+# Create Lambda function with environment variables
+resource "aws_lambda_function" "example_function" {
+  function_name = "example-function"
+  handler      = "index.handler"
+  runtime      = "nodejs14.x"
+  filename     = "path/to/your/lambda/zip/file.zip"
+
+  environment = {
+    DYNAMODB_TABLE_NAME = aws_dynamodb_table.example_table.name
+    # Add other environment variables as needed
+  }
+}
+
+# Create Cognito User Pool
+resource "aws_cognito_user_pool" "example_pool" {
+  name = "example-pool"
+}
+
+# Save Cognito User Pool ID and ARN into variables
+output "cognito_user_pool_id" {
+  value = aws_cognito_user_pool.example_pool.id
+}
+
+output "cognito_user_pool_arn" {
+  value = aws_cognito_user_pool.example_pool.arn
+}
+
+# Create Lambda function Cognito Trigger
+resource "aws_cognito_user_pool_trigger" "example_trigger" {
+  function_name  = aws_lambda_function.example_function.arn
+  trigger_name   = "PreSignUp"
+  enabled        = true
+  cognito_pool_id = aws_cognito_user_pool.example_pool.id
+}
+
+
+// Lambda function code (index.js)
+
+exports.handler = async (event) => {
+    // Access the DynamoDB table name from environment variable
+    const dynamoDBTableName = process.env.DYNAMODB_TABLE_NAME;
+
+    // Your Lambda function logic here
+
+    return {
+        statusCode: 200,
+        body: JSON.stringify('Lambda function executed successfully!'),
+    };
+};
