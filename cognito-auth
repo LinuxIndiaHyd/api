@@ -1,0 +1,56 @@
+provider "aws" {
+  region = "your_aws_region"
+}
+
+resource "aws_cognito_user_pool" "example" {
+  name = "example-user-pool"
+  
+  # Hosted UI Configuration
+  alias_attributes        = ["email"]
+  auto_verified_attributes = ["email"]
+
+  # Define Callback URLs
+  callback_urls    = ["https://your-app-callback-url"]
+  logout_urls      = ["https://your-app-logout-url"]
+  allowed_oauth_flows_user_pool_client = true
+
+  # Define Identity Providers
+  identity_providers = [
+    {
+      name = "COGNITO"
+      details = {
+        client_id                 = "your_cognito_client_id"
+        client_secret             = "your_cognito_client_secret"
+        attributes_request_method = "GET"
+        attributes_url            = "https://your-attributes-endpoint"
+        authorize_scopes         = ["openid", "email"]
+      }
+    },
+    # Add more identity providers as needed
+  ]
+
+  # Define Authorization Code Grant Type
+  supported_identity_providers = ["COGNITO"]
+  callback_url              = "https://your-app-callback-url"
+  allowed_oauth_flows       = ["authorization_code"]
+  allowed_oauth_scopes      = ["openid", "email", "custom_scope"]
+
+  # Define OpenID Connect Scopes
+  openid_connect_config {
+    oidc_issuer   = "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.example.id}"
+    callback_urls = ["https://your-app-callback-url"]
+    logout_urls   = ["https://your-app-logout-url"]
+    client_id     = "your_oidc_client_id"
+    client_secret = "your_oidc_client_secret"
+    flows         = {
+      authorization_code = true
+      implicit           = true
+    }
+    scopes = ["openid", "email", "custom_scope"]
+  }
+}
+
+# Output the User Pool ID
+output "user_pool_id" {
+  value = aws_cognito_user_pool.example.id
+}
