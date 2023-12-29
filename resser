@@ -1,0 +1,18 @@
+resource "aws_cognito_user_pool_resource_server" "example_resource_server" {
+  user_pool_id  = aws_cognito_user_pool.example.id
+  identifier    = "example-resource-server"
+  name          = "Example Resource Server"
+  scopes {
+    scope_name        = "custom_scope"
+    scope_description = "Custom Scope Description"
+  }
+  scopes {
+    scope_name        = "another_scope"
+    scope_description = "Another Scope Description"
+  }
+}
+
+# Output the Resource Server ID
+output "resource_server_id" {
+  value = aws_cognito_user_pool_resource_server.example_resource_server.id
+}
