@@ -1,0 +1,33 @@
+provider "aws" {
+  region = "us-east-1"  # Set your desired AWS region
+}
+
+# Define the CloudWatch Logs group
+resource "aws_cloudwatch_log_group" "http_api_logs" {
+  name = "/aws/apigateway/Terraform-http-api-stich"  # Set a unique name for your log group
+}
+
+# Define the HTTP API
+resource "aws_apigatewayv2_api" "http_api" {
+  name          = "Terraform-http-api-stich"
+  protocol_type = "HTTP"
+
+  # Enable access logging for the HTTP API
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.http_api_logs.arn
+    format          = "$context.identity.sourceIp - - [$context.requestTime] \"$context.httpMethod $context.routeKey $context.protocol\" $context.status $context.responseLength $context.integrationLatency"
+  }
+}
+
+# Attach the CloudWatch Logs group ARN to the HTTP API resource
+resource "aws_apigatewayv2_stage" "default_stage" {
+  api_id      = aws_apigatewayv2_api.http_api.id
+  name        = "default"
+  auto_deploy = true
+
+  # Attach CloudWatch Logs group ARN to the stage
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.http_api_logs.arn
+    format          = "$context.identity.sourceIp - - [$context.requestTime] \"$context.httpMethod $context.routeKey $context.protocol\" $context.status $context.responseLength $context.integrationLatency"
+  }
+}
