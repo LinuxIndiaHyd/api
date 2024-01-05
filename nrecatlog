@@ -1,0 +1,77 @@
+provider "aws" {
+  region = "your_aws_region"
+}
+
+resource "aws_iam_role" "service_catalog_role" {
+  name = "service_catalog_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = "sts:AssumeRole",
+        Effect = "Allow",
+        Principal = {
+          Service = "servicecatalog.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+# Assume you have an existing S3 bucket with your CloudFormation template
+data "aws_s3_bucket_object" "cloudformation_template" {
+  bucket = "your-s3-bucket-name"
+  key    = "path/to/your/cloudformation-template.yaml"
+}
+
+resource "aws_servicecatalog_portfolio" "product_portfolio" {
+  name        = "YourProductPortfolio"
+  display_name = "Your Product Portfolio"
+}
+
+resource "aws_servicecatalog_product" "s3_product" {
+  name          = "S3Product"
+  owner         = "YourCompanyName"
+  description   = "S3 Bucket Product"
+  distributor   = "YourCompanyName"
+  support_email = "support@example.com"
+  support_url   = "http://support.example.com"
+
+  provisioning_artifact {
+    name     = "v1.0.0"
+    description = "First version of the product"
+  }
+}
+
+resource "aws_servicecatalog_portfolio_product_association" "product_association" {
+  product_id    = aws_servicecatalog_product.s3_product.id
+  portfolio_id  = aws_servicecatalog_portfolio.product_portfolio.id
+  display_name  = "S3 Product Display Name"
+}
+
+resource "aws_servicecatalog_provisioning_artifact" "s3_provisioning_artifact" {
+  name        = "v1.0.0"
+  description = "First version of the product"
+  product_id  = aws_servicecatalog_product.s3_product.id
+}
+
+resource "aws_servicecatalog_provisioned_product" "s3_provisioned_product" {
+  name             = "YourProvisionedProduct"
+  product_id       = aws_servicecatalog_product.s3_product.id
+  provisioning_artifact_id = aws_servicecatalog_provisioning_artifact.s3_provisioning_artifact.id
+  path_id          = aws_servicecatalog_portfolio_product_association.product_association.path_id
+
+  provisioned_product_name = "YourProvisionedProduct"
+  provisioned_product_type = "CFN_STACK"
+  provisioning_parameters = {
+    "Name"          = "YourProvisionedProduct"
+    "S3BucketName"  = "your-s3-bucket-name"
+    "TemplateURL"   = data.aws_s3_bucket_object.cloudformation_template.source
+  }
+
+  tags = {
+    Key   = "Value"
+    Key2  = "Value2"
+  }
+}
