@@ -1,0 +1,38 @@
+provider "aws" {
+  region = "us-east-1"  # Set your desired AWS region
+}
+
+# Define variables
+variable "product_id" {
+  type    = string
+  default = "your-product-id"  # Replace with your actual product ID
+}
+
+variable "artifact_id" {
+  type    = string
+  default = "your-artifact-id"  # Replace with your actual artifact ID
+}
+
+variable "product_name" {
+  type    = string
+  default = "example-provisioned-product"  # Replace with your desired product name
+}
+
+variable "path_id" {
+  type    = string
+  default = "your-path-id"  # Replace with your actual path ID
+}
+
+# Create provisioned product
+resource "aws_servicecatalog_provisioned_product" "example_provisioned_product" {
+  name                = var.product_name
+  product_id          = var.product_id
+  provisioning_artifact_id = var.artifact_id
+  path_id             = var.path_id
+  
+  # Optional: Add tags if needed
+  tags = {
+    Key   = "Value",
+    Key2  = "Value2",
+  }
+}
